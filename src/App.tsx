@@ -37,6 +37,7 @@ import { getCurrentUser, logout } from './lib/auth';
 import { LoginView } from './components/auth/LoginView';
 import { CatalogoPublico } from './components/public/CatalogoPublico';
 import { CalculadoraJabonModal } from './components/public/CalculadoraJabonModal';
+import { isModoCalculadoraFijo } from './utils/envMode';
 import { formatDecimal, formatUnidadLabel } from './utils/formatters';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
@@ -645,9 +646,18 @@ export const App: React.FC = () => {
 
       {/* Modal de Calculadora de Proporciones */}
       <CalculadoraJabonModal
-        isOpen={isCalculadoraOpen}
-        onClose={() => setIsCalculadoraOpen(false)}
-        onIrAlLaboratorio={() => setIsCalculadoraOpen(false)}
+        isOpen={isCalculadoraOpen || isModoCalculadoraFijo()}
+        isLocked={isModoCalculadoraFijo()}
+        onClose={() => {
+          if (!isModoCalculadoraFijo()) {
+            setIsCalculadoraOpen(false);
+          }
+        }}
+        onIrAlLaboratorio={() => {
+          if (!isModoCalculadoraFijo()) {
+            setIsCalculadoraOpen(false);
+          }
+        }}
       />
 
       {/* Notificaciones flotantes */}

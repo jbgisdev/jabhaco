@@ -17,6 +17,7 @@ import type { JabonGuardadoItem, AuthUser } from '../../types/database.types';
 import { DetalleJabonModal } from './DetalleJabonModal';
 import type { SoapProduct } from './DetalleJabonModal';
 import { CalculadoraJabonModal } from './CalculadoraJabonModal';
+import { isModoCalculadoraFijo } from '../../utils/envMode';
 
 // Jabones de alta calidad para vitrina comercial inicial
 const JABONES_VITRINA_BASE: SoapProduct[] = [
@@ -145,7 +146,8 @@ export const CatalogoPublico: React.FC<CatalogoPublicoProps> = ({
   const [selectedCategoria, setSelectedCategoria] = useState('todos');
   const [orden, setOrden] = useState<'populares' | 'precio_bajo' | 'precio_alto'>('populares');
   const [selectedJabon, setSelectedJabon] = useState<SoapProduct | null>(null);
-  const [isCalculadoraOpen, setIsCalculadoraOpen] = useState(false);
+  const modoCalculadoraFijo = useMemo(() => isModoCalculadoraFijo(), []);
+  const [isCalculadoraOpen, setIsCalculadoraOpen] = useState<boolean>(modoCalculadoraFijo);
 
   // Combinar los jabones de Supabase/Guardados con los de vitrina base
   const todosLosJabones = useMemo(() => {
@@ -572,8 +574,13 @@ export const CatalogoPublico: React.FC<CatalogoPublicoProps> = ({
       />
 
       <CalculadoraJabonModal
-        isOpen={isCalculadoraOpen}
-        onClose={() => setIsCalculadoraOpen(false)}
+        isOpen={isCalculadoraOpen || modoCalculadoraFijo}
+        isLocked={modoCalculadoraFijo}
+        onClose={() => {
+          if (!modoCalculadoraFijo) {
+            setIsCalculadoraOpen(false);
+          }
+        }}
         onIrAlLaboratorio={currentUser ? onIrAlLaboratorio : onIrAlLogin}
       />
     </div>

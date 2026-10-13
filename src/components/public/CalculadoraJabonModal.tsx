@@ -20,12 +20,14 @@ interface CalculadoraJabonModalProps {
   isOpen: boolean;
   onClose: () => void;
   onIrAlLaboratorio: () => void;
+  isLocked?: boolean;
 }
 
 export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   isOpen,
   onClose,
   onIrAlLaboratorio,
+  isLocked = false,
 }) => {
   // 1. Estado de inputs principales
   const [pesoDeseado, setPesoDeseado] = useState<number>(100); // gramos por barra
@@ -156,7 +158,7 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
     setGotasFraganciaManual(null);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !isLocked) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
@@ -169,14 +171,21 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
           <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -left-10 -top-10 w-40 h-40 bg-brand-500/15 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Botón Cerrar */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/35 text-white/80 hover:text-white transition-colors"
-            title="Cerrar calculadora"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {/* Botón Cerrar (Oculto en modo bloqueado) */}
+          {!isLocked ? (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/35 text-white/80 hover:text-white transition-colors cursor-pointer"
+              title="Cerrar calculadora"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold backdrop-blur-md flex items-center gap-1.5 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+              <span>Modo Pruebas</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0">
@@ -630,27 +639,34 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
             )}
           </button>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Cerrar
-            </button>
+          {!isLocked ? (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onIrAlLaboratorio();
-              }}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white shadow-md shadow-brand-600/25 active:scale-95 transition-all cursor-pointer"
-            >
-              <span>Formular & Costear</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onIrAlLaboratorio();
+                }}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white shadow-md shadow-brand-600/25 active:scale-95 transition-all cursor-pointer"
+              >
+                <span>Formular & Costear</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Jabhaco Lab • Calculadora Botánica Oficial</span>
+            </div>
+          )}
 
         </div>
       </div>
