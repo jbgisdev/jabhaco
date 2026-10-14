@@ -4,8 +4,6 @@ import {
   X,
   Sparkles,
   ArrowRight,
-  Copy,
-  Check,
   RotateCcw,
   Plus,
   Minus,
@@ -40,7 +38,6 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   const [gotasFraganciaManual, setGotasFraganciaManual] = useState<number | null>(null);
 
   // Estados visuales
-  const [copiado, setCopiado] = useState<boolean>(false);
   const [mostrarDetallesAvanzados, setMostrarDetallesAvanzados] = useState<boolean>(false);
 
   // Pills rápidas
@@ -137,27 +134,6 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
       gramosOtrosAditivos,
     };
   }, [pesoDeseado, cantidadBarras, factorMolde, porcentajeAditivos, incluirFragancia, gotasFraganciaManual]);
-
-  const handleCopiarResumen = () => {
-    const texto = `🧼 FÓRMULA DE PROPORCIONES JABHACO LAB:
-• Barras a elaborar: ${calculos.barras} barra(s) de ${calculos.pesoNetoUnitario}g c/u
-• Factor de moldeo: x${calculos.factor} → Mezcla total requerida: ${formatDecimal(calculos.totalMezclaLote, 1)}g
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌿 Base de Glicerina: ${formatDecimal(calculos.totalGramosGlicerina, 1)}g (${(100 - calculos.pctAditivos).toFixed(1)}%)
-🌸 Total Aditivos (${calculos.pctAditivos}%): ${formatDecimal(calculos.totalGramosAditivos, 2)}g
-${
-  incluirFragancia
-    ? `  - Fragancia (Opcional): ${calculos.gotasFraganciaActuales} gotas (~${formatDecimal(calculos.gramosFraganciaActuales, 2)}g) [Máx recomendado: ${calculos.totalMaxGotasFragancia} gotas]`
-    : `  - Sin fragancia (100% libre de aromas)`
-}
-  - Otros aditivos botánicos (extractos, arcillas, etc.): ${formatDecimal(calculos.gramosOtrosAditivos, 2)}g
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
-
-    navigator.clipboard.writeText(texto);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2500);
-  };
 
   const handleReset = () => {
     setPesoDeseado(100);
@@ -508,8 +484,8 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
           {/* 4. MÓDULO DE FRAGANCIA (REGLA: 100g -> MÁX 12 GOTAS / 0.5g; 50g -> 6 GOTAS) */}
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-pink-50/50 to-purple-100/40 border-2 border-purple-200/90 space-y-3">
             
-            {/* Header del bloque con switch opcional */}
-            <div className="flex items-center justify-between gap-3">
+            {/* Header del bloque con switch estilo iOS/Material */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-3.5 rounded-xl border border-purple-200/80 shadow-xs">
               <div>
                 <span className="text-xs font-extrabold uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
                   <span>🌸 Fragancia / Esencia</span>
@@ -522,18 +498,24 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
                 </p>
               </div>
 
-              {/* Toggle switch Opcional */}
-              <button
-                type="button"
-                onClick={() => setIncluirFragancia(!incluirFragancia)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  incluirFragancia
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-white text-slate-500 border border-slate-300'
-                }`}
-              >
-                <span>{incluirFragancia ? 'Incluida' : 'Sin aroma'}</span>
-              </button>
+              {/* Toggle switch visual e intuitivo */}
+              <label className="inline-flex items-center gap-3 cursor-pointer select-none shrink-0 bg-white px-3.5 py-2 rounded-xl border border-purple-200 shadow-xs hover:border-purple-300 transition-all">
+                <span className={`text-xs font-bold transition-colors ${
+                  incluirFragancia ? 'text-purple-900' : 'text-slate-400'
+                }`}>
+                  {incluirFragancia ? 'Con fragancia' : 'Sin fragancia'}
+                </span>
+                
+                <div className="relative inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={incluirFragancia}
+                    onChange={(e) => setIncluirFragancia(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
+                </div>
+              </label>
             </div>
 
             {incluirFragancia ? (
@@ -649,25 +631,12 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
         {/* Footer de Acciones */}
         <div className="p-4 sm:p-5 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           
-          <button
-            type="button"
-            onClick={handleCopiarResumen}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer active:scale-95"
-          >
-            {copiado ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-emerald-700">¡Fórmula Copiada!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 text-slate-500" />
-                <span>Copiar Fórmula</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+            <span>Jabhaco Lab • Calculadora Botánica</span>
+          </div>
 
-          {!isLocked ? (
+          {!isLocked && (
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
@@ -688,11 +657,6 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
                 <span>Formular & Costear</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>Jabhaco Lab • Calculadora Botánica Oficial</span>
             </div>
           )}
 
