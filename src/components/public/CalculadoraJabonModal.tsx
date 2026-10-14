@@ -13,6 +13,7 @@ import {
   Info,
 } from 'lucide-react';
 import { formatDecimal } from '../../utils/formatters';
+import { ApoyarProyectoModal } from './ApoyarProyectoModal';
 
 interface CalculadoraJabonModalProps {
   isOpen: boolean;
@@ -27,6 +28,9 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   onIrAlLaboratorio,
   isLocked = false,
 }) => {
+  // Modal de Apoyo / Nequi
+  const [isApoyoModalOpen, setIsApoyoModalOpen] = useState(false);
+
   // 1. Estado de inputs principales
   const [pesoDeseado, setPesoDeseado] = useState<number>(100); // gramos por barra
   const [cantidadBarras, setCantidadBarras] = useState<number>(1); // número de barras
@@ -631,12 +635,17 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
         {/* Footer de Acciones */}
         <div className="p-4 sm:p-5 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            <span>Jabhaco Lab • Calculadora Botánica</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsApoyoModalOpen(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-50 via-purple-50 to-amber-50 hover:from-pink-100 hover:to-amber-100 text-[#200020] border-2 border-purple-200/90 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer group"
+            title="Apoya el proyecto con un aporte voluntario en Nequi"
+          >
+            <span className="text-base group-hover:scale-125 transition-transform inline-block">☕</span>
+            <span>Invítame un café (Nequi)</span>
+          </button>
 
-          {!isLocked && (
+          {!isLocked ? (
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
@@ -658,10 +667,21 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+              <span>Jabhaco Lab • Proporciones Botánicas</span>
+            </div>
           )}
 
         </div>
       </div>
+
+      {/* Modal de Apoyo / Nequi QR */}
+      <ApoyarProyectoModal
+        isOpen={isApoyoModalOpen}
+        onClose={() => setIsApoyoModalOpen(false)}
+      />
     </div>
   );
 };
