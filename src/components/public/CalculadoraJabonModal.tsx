@@ -44,8 +44,18 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   const [mostrarDetallesAvanzados, setMostrarDetallesAvanzados] = useState<boolean>(false);
 
   // Pills rápidas
-  const PESOS_PREDETERMINADOS = [50, 80, 100, 120, 150];
-  const PORCENTAJES_RAPIDOS = [3.0, 3.5, 4.0, 5.0, 6.0];
+  const PESOS_PREDETERMINADOS = [50, 80, 100, 120];
+  const PORCENTAJES_RAPIDOS = [3.0, 3.5, 4.0];
+
+  // Modificar peso deseado de 10 en 10
+  const ajustarPeso = (delta: number) => {
+    setPesoDeseado((prev) => {
+      const base = prev || 0;
+      const nuevo = Math.max(10, Math.round((base + delta) / 10) * 10);
+      return nuevo;
+    });
+    setGotasFraganciaManual(null);
+  };
 
   // Modificar porcentaje con paso de 0.1 dentro del rango [3.0, 6.0]
   const ajustarPorcentaje = (delta: number) => {
@@ -172,7 +182,7 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
           <div className="absolute -left-10 -top-10 w-40 h-40 bg-brand-500/15 rounded-full blur-2xl pointer-events-none" />
 
           {/* Botón Cerrar (Oculto en modo bloqueado) */}
-          {!isLocked ? (
+          {!isLocked && (
             <button
               onClick={onClose}
               className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/35 text-white/80 hover:text-white transition-colors cursor-pointer"
@@ -180,11 +190,6 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
             >
               <X className="w-4 h-4" />
             </button>
-          ) : (
-            <div className="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold backdrop-blur-md flex items-center gap-1.5 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
-              <span>Modo Pruebas</span>
-            </div>
           )}
 
           <div className="flex items-center gap-3">
@@ -213,29 +218,50 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
           {/* 1. SECCIÓN DE INPUTS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
             
-            {/* Input: Peso Deseado por Barra */}
+            {/* Input: Peso Deseado por Barra con stepper +/- 10 */}
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                 Peso Deseado por Barra
               </label>
               
-              <div className="relative">
-                <input
-                  type="number"
-                  min={10}
-                  max={2000}
-                  step={5}
-                  value={pesoDeseado || ''}
-                  onChange={(e) => {
-                    setPesoDeseado(Number(e.target.value) || 0);
-                    setGotasFraganciaManual(null); // Recalcular fragancia proporcional
-                  }}
-                  className="w-full pl-3.5 pr-12 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-xs"
-                  placeholder="100"
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                  g
-                </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => ajustarPeso(-10)}
+                  disabled={pesoDeseado <= 10}
+                  className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
+                  title="Disminuir 10g"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min={10}
+                    max={2000}
+                    step={10}
+                    value={pesoDeseado || ''}
+                    onChange={(e) => {
+                      setPesoDeseado(Number(e.target.value) || 0);
+                      setGotasFraganciaManual(null); // Recalcular fragancia proporcional
+                    }}
+                    className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-xs"
+                    placeholder="100"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                    g
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => ajustarPeso(+10)}
+                  className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                  title="Aumentar 10g"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Pills rápidas de pesos estándar */}
