@@ -1,12 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
+  Plus,
+  Minus,
+  ShoppingBag,
   Sparkles,
-  Check,
-  ShieldCheck,
-  MessageCircle,
-  HelpCircle,
-  Heart,
 } from 'lucide-react';
 import { formatCOP } from '../../utils/formatters';
 
@@ -31,20 +29,45 @@ interface DetalleJabonModalProps {
   jabon: SoapProduct | null;
   isOpen: boolean;
   onClose: () => void;
+  onAgregarAlCarrito?: (jabon: SoapProduct, cantidad: number) => void;
 }
 
 export const DetalleJabonModal: React.FC<DetalleJabonModalProps> = ({
   jabon,
   isOpen,
   onClose,
+  onAgregarAlCarrito,
 }) => {
+  const [cantidad, setCantidad] = useState(1);
+  const [agregadoAnim, setAgregadoAnim] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCantidad(1);
+      setAgregadoAnim(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !jabon) return null;
 
-  const handlePedirWhatsApp = () => {
-    const texto = encodeURIComponent(
-      `¡Hola! Estoy interesado en ordenar el jabón artesanal "${jabon.nombre}" (${formatCOP(jabon.valor_venta)} COP). ¿Tienen disponibilidad?`
-    );
-    window.open(`https://wa.me/?text=${texto}`, '_blank');
+  const handleEnviarABolsa = () => {
+    if (onAgregarAlCarrito) {
+      onAgregarAlCarrito(jabon, cantidad);
+      setAgregadoAnim(true);
+      setTimeout(() => {
+        setAgregadoAnim(false);
+        onClose();
+      }, 400);
+    } else {
+      // Fallback a WhatsApp directo
+      const texto = encodeURIComponent(
+        `¡Hola Jabhaco Lab! 🧼 Quiero ordenar ${cantidad}x "${jabon.nombre}" (${formatCOP(
+          jabon.valor_venta * cantidad
+        )} COP). ¿Tienen disponibilidad?`
+      );
+      window.open(`https://wa.me/?text=${texto}`, '_blank');
+      onClose();
+    }
   };
 
   const beneficiosList = jabon.beneficios
@@ -56,25 +79,31 @@ export const DetalleJabonModal: React.FC<DetalleJabonModalProps> = ({
       ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div
-        className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="relative w-full sm:max-w-md bg-white rounded-t-[32px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 text-slate-900"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Botón flotante cerrar */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white backdrop-blur-sm transition-colors shadow-md"
-          title="Cerrar"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Barra superior de arrastre estilo Bottom Sheet */}
+        <div className="pt-3 pb-1 shrink-0 flex items-center justify-center relative">
+          <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-2 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+            title="Cerrar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-        {/* Scrollable Body */}
-        <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+        {/* Cuerpo Scrolleable */}
+        <div className="overflow-y-auto flex-1 px-5 sm:px-6 pb-4 space-y-4">
           
-          {/* Header con Imagen Principal */}
-          <div className="relative bg-slate-100 h-64 sm:h-80 w-full overflow-hidden flex items-center justify-center">
+          {/* Imagen Grande Redondeada estilo Vecino Pro */}
+          <div className="w-full h-64 sm:h-72 rounded-3xl bg-slate-100 overflow-hidden relative shadow-sm">
             {jabon.foto_producto_url ? (
               <img
                 src={jabon.foto_producto_url}
@@ -82,141 +111,128 @@ export const DetalleJabonModal: React.FC<DetalleJabonModalProps> = ({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="flex flex-col items-center justify-center text-slate-400 gap-2">
-                <Sparkles className="w-12 h-12 text-brand-500" />
-                <span className="text-xs font-semibold">Jabón Botánico Exclusivo</span>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-2">
+                <Sparkles className="w-12 h-12 text-[#0b5c3b]" />
+                <span className="text-xs font-semibold text-slate-400">Jabón Botánico Exclusivo</span>
               </div>
             )}
 
             {/* Badges sobre la foto */}
-            <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 z-10">
-              <span className="px-3 py-1 rounded-full bg-emerald-600/90 text-white text-[11px] font-extrabold uppercase tracking-wider backdrop-blur-sm shadow-md">
-                {jabon.tipo_piel || 'Todo tipo de piel'}
-              </span>
-              {jabon.badge && (
-                <span className="px-3 py-1 rounded-full bg-brand-600/90 text-white text-[11px] font-extrabold uppercase tracking-wider backdrop-blur-sm shadow-md">
+            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+              {jabon.badge ? (
+                <span className="px-3 py-1 rounded-full bg-[#0b5c3b] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
                   {jabon.badge}
                 </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full bg-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+                  OFERTA
+                </span>
               )}
             </div>
+          </div>
 
-            {/* Degradado inferior */}
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+          {/* Información Principal del Producto */}
+          <div>
+            <span className="text-[11px] font-black uppercase tracking-wider text-[#0b5c3b] block">
+              JABHACO BOTÁNICO
+            </span>
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5 leading-tight">
+              {jabon.nombre}
+            </h2>
+            <p className="text-xs text-slate-400 font-medium mt-1">
+              100g • {jabon.tipo_piel || 'Para todo tipo de piel'}
+            </p>
+            {jabon.lema && (
+              <p className="text-xs text-[#0b5c3b] font-semibold italic mt-1">
+                "{jabon.lema}"
+              </p>
+            )}
 
-            {/* Precio flotante sobre la foto */}
-            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white z-10">
-              <div>
-                <span className="text-xs uppercase tracking-wider text-slate-200 font-semibold block">
-                  Precio Artesanal
-                </span>
-                <span className="text-2xl sm:text-3xl font-black text-white drop-shadow-md">
-                  {formatCOP(jabon.valor_venta)} <span className="text-sm font-semibold">COP</span>
-                </span>
-              </div>
-
-              <span className="text-[11px] bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-xl text-white font-medium border border-white/25">
-                Barra ~100g
+            {/* Precio en grande estilo Vecino Pro */}
+            <div className="mt-3">
+              <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                {formatCOP(jabon.valor_venta)} <span className="text-xs font-bold text-slate-500">COP</span>
               </span>
             </div>
           </div>
 
-          {/* Información y Ficha Técnica */}
-          <div className="p-5 sm:p-7 space-y-6">
-            
-            {/* Título y Lema */}
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {jabon.nombre}
-              </h2>
-              {jabon.lema && (
-                <p className="text-sm sm:text-base text-brand-700 font-semibold mt-1">
-                  "{jabon.lema}"
-                </p>
-              )}
-              {jabon.descripcion && (
-                <p className="text-xs sm:text-sm text-slate-600 mt-2.5 leading-relaxed">
-                  {jabon.descripcion}
-                </p>
-              )}
+          {/* Descripción & Beneficios */}
+          {jabon.descripcion && (
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+              {jabon.descripcion}
+            </p>
+          )}
+
+          {/* Beneficios Clave */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Beneficios Botánicos
+            </span>
+            <div className="space-y-1.5 bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100/80">
+              {beneficiosList.map((beneficio, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0b5c3b] mt-1.5 shrink-0" />
+                  <span>{beneficio}</span>
+                </div>
+              ))}
             </div>
-
-            {/* Garantías estilo Rappi */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 py-2">
-              <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-100 text-center">
-                <ShieldCheck className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
-                <span className="block text-[11px] font-bold text-emerald-900">100% Vegetal</span>
-                <span className="text-[10px] text-emerald-700/80">Base de Glicerina</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-teal-50/80 border border-teal-100 text-center">
-                <Sparkles className="w-5 h-5 text-teal-600 mx-auto mb-1" />
-                <span className="block text-[11px] font-bold text-teal-900">Artesanal</span>
-                <span className="text-[10px] text-teal-700/80">Hecho a mano</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-100 text-center">
-                <Heart className="w-5 h-5 text-amber-600 mx-auto mb-1" />
-                <span className="block text-[11px] font-bold text-amber-900">Biodegradable</span>
-                <span className="text-[10px] text-amber-700/80">Eco amigable</span>
-              </div>
-            </div>
-
-            {/* Beneficios para la piel */}
-            <div className="space-y-2.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-600" />
-                Beneficios Principales
-              </h3>
-              <div className="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                {beneficiosList.map((beneficio, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                    <span>{beneficio}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Modo de Uso */}
-            {jabon.modo_uso && (
-              <div className="space-y-1.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <HelpCircle className="w-4 h-4 text-brand-600" />
-                  Modo de Uso Recomendado
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed bg-brand-50/50 p-3.5 rounded-xl border border-brand-100">
-                  {jabon.modo_uso}
-                </p>
-              </div>
-            )}
-
-            {/* Observaciones o recomendación de conservación */}
-            {jabon.observaciones && (
-              <p className="text-[11px] text-slate-500 italic">
-                * Nota del artesano: {jabon.observaciones}
-              </p>
-            )}
           </div>
+
+          {/* Modo de Uso si existe */}
+          {jabon.modo_uso && (
+            <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block">Modo de empleo</span>
+              <p>{jabon.modo_uso}</p>
+            </div>
+          )}
+
         </div>
 
-        {/* Footer de Acción estilo Rappi */}
-        <div className="p-4 sm:p-5 bg-white border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
-          <div>
-            <span className="text-[11px] text-slate-400 font-semibold block uppercase">Total</span>
-            <span className="text-xl font-extrabold text-slate-900">
-              {formatCOP(jabon.valor_venta)} <span className="text-xs text-slate-500 font-normal">COP</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
+        {/* Footer con Stepper y Botón Enviar a bolsa (Exacto a Imagen 3) */}
+        <div className="p-4 sm:p-5 bg-white border-t border-slate-100 flex items-center gap-3 shrink-0">
+          
+          {/* Stepper de Cantidad [- 1 +] */}
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shrink-0">
             <button
-              onClick={handlePedirWhatsApp}
               type="button"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/30 active:scale-98 transition-all cursor-pointer"
+              onClick={() => setCantidad((prev) => Math.max(1, prev - 1))}
+              disabled={cantidad <= 1}
+              className="w-9 h-9 rounded-xl bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm shadow-xs disabled:opacity-40 transition-all cursor-pointer"
+              title="Disminuir"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>Pedir por WhatsApp</span>
+              <Minus className="w-4 h-4 text-[#0b5c3b]" />
+            </button>
+
+            <span className="w-7 text-center font-black text-base text-slate-900">
+              {cantidad}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setCantidad((prev) => prev + 1)}
+              className="w-9 h-9 rounded-xl bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm shadow-xs transition-all cursor-pointer"
+              title="Aumentar"
+            >
+              <Plus className="w-4 h-4 text-[#0b5c3b]" />
             </button>
           </div>
+
+          {/* Botón Principal: Enviar a bolsa */}
+          <button
+            type="button"
+            onClick={handleEnviarABolsa}
+            className={`flex-1 py-3.5 px-5 rounded-2xl font-extrabold text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-98 cursor-pointer ${
+              agregadoAnim
+                ? 'bg-emerald-600 shadow-emerald-600/30'
+                : 'bg-[#0b5c3b] hover:bg-[#08482e] shadow-[#0b5c3b]/25'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>{agregadoAnim ? '¡Agregado!' : 'Enviar a bolsa'}</span>
+          </button>
+
         </div>
+
       </div>
     </div>
   );
