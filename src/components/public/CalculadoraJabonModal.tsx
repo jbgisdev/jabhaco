@@ -639,10 +639,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             type="button"
             onClick={() => setIsApoyoModalOpen(true)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-50 via-purple-50 to-amber-50 hover:from-pink-100 hover:to-amber-100 text-[#200020] border-2 border-purple-200/90 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer group"
-            title="Apoya el proyecto con un aporte voluntario en Nequi"
+            title="Apoya el proyecto con Nequi o PayPal"
           >
             <span className="text-base group-hover:scale-125 transition-transform inline-block">☕</span>
-            <span>Invítame un café (Nequi)</span>
+            <span>Invítame un café (Nequi / PayPal)</span>
           </button>
 
           {!isLocked ? (
