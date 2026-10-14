@@ -215,180 +215,182 @@ Calculado con Jabhaco Lab • Proporciones profesionales de moldeo`;
         {/* Cuerpo Scrolleable */}
         <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-5">
           
-          {/* 1. SECCIÓN DE INPUTS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+          {/* 1. SECCIÓN DE INPUTS Y PARÁMETROS UNIFICADA */}
+          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
             
-            {/* Input: Peso Deseado por Barra con stepper +/- 10 */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                Peso Deseado por Barra
-              </label>
+            {/* Fila 1: Peso Deseado y Cantidad de Barras */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => ajustarPeso(-10)}
-                  disabled={pesoDeseado <= 10}
-                  className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
-                  title="Disminuir 10g"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
+              {/* Input: Peso Deseado por Barra con stepper +/- 10 */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Peso Deseado por Barra
+                </label>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => ajustarPeso(-10)}
+                    disabled={pesoDeseado <= 10}
+                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
+                    title="Disminuir 10g"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
 
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    min={10}
-                    max={2000}
-                    step={10}
-                    value={pesoDeseado || ''}
-                    onChange={(e) => {
-                      setPesoDeseado(Number(e.target.value) || 0);
-                      setGotasFraganciaManual(null); // Recalcular fragancia proporcional
-                    }}
-                    className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-xs"
-                    placeholder="100"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                    g
-                  </span>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min={10}
+                      max={2000}
+                      step={10}
+                      value={pesoDeseado || ''}
+                      onChange={(e) => {
+                        setPesoDeseado(Number(e.target.value) || 0);
+                        setGotasFraganciaManual(null); // Recalcular fragancia proporcional
+                      }}
+                      className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-xs"
+                      placeholder="100"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                      g
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => ajustarPeso(+10)}
+                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                    title="Aumentar 10g"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => ajustarPeso(+10)}
-                  className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                  title="Aumentar 10g"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                {/* Pills rápidas de pesos estándar */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[10px] text-slate-400 font-semibold mr-1">Rápido:</span>
+                  {PESOS_PREDETERMINADOS.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        setPesoDeseado(p);
+                        setGotasFraganciaManual(null);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        pesoDeseado === p
+                          ? 'bg-brand-600 text-white shadow-xs scale-102'
+                          : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
+                      }`}
+                    >
+                      {p}g
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Pills rápidas de pesos estándar */}
-              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                <span className="text-[10px] text-slate-400 font-semibold mr-1">Rápido:</span>
-                {PESOS_PREDETERMINADOS.map((p) => (
+              {/* Input: Cantidad de Barras */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Cantidad de Barras
+                </label>
+
+                <div className="flex items-center gap-2">
                   <button
-                    key={p}
                     type="button"
-                    onClick={() => {
-                      setPesoDeseado(p);
-                      setGotasFraganciaManual(null);
-                    }}
+                    onClick={() => setCantidadBarras((prev) => Math.max(1, prev - 1))}
+                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                    title="Disminuir barra"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex-1 text-center bg-white border border-slate-300 py-2.5 rounded-xl shadow-xs flex items-center justify-center">
+                    <span className="text-xl font-black text-slate-900 leading-none">
+                      {cantidadBarras}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCantidadBarras((prev) => prev + 1)}
+                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                    title="Aumentar barra"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-slate-500 pt-1">
+                  Peso neto total del lote: <strong>{calculos.totalNetoLote}g</strong>
+                </p>
+              </div>
+
+            </div>
+
+            {/* Fila 2: Porcentaje de Aditivos dentro del mismo frame */}
+            <div className="border-t border-slate-200/90 pt-3.5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Porcentaje de Aditivos Permitido
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    Rango recomendado: de <strong>3.0%</strong> a <strong>6.0%</strong> (paso ±0.1%)
+                  </p>
+                </div>
+
+                {/* Stepper de Porcentaje (▲ y ▼ en 0.1) */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => ajustarPorcentaje(-0.1)}
+                    disabled={porcentajeAditivos <= 3.0}
+                    className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                    title="Disminuir 0.1%"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+
+                  <div className="min-w-[90px] text-center bg-white border-2 border-brand-500/30 py-1.5 px-3 rounded-xl shadow-inner">
+                    <span className="text-xl font-black text-brand-700">
+                      {calculos.pctAditivos.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => ajustarPorcentaje(+0.1)}
+                    disabled={porcentajeAditivos >= 6.0}
+                    className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                    title="Aumentar 0.1%"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Selector rápido de porcentajes típicos */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
+                <span className="text-[10px] text-slate-400 font-semibold mr-1">Valores típicos:</span>
+                {PORCENTAJES_RAPIDOS.map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setPorcentajeAditivos(pct)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      pesoDeseado === p
-                        ? 'bg-brand-600 text-white shadow-xs scale-102'
-                        : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
+                      calculos.pctAditivos === pct
+                        ? 'bg-amber-600 text-white shadow-xs scale-102'
+                        : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200/80 shadow-xs'
                     }`}
                   >
-                    {p}g
+                    {pct.toFixed(1)}%
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Input: Cantidad de Barras a elaborar */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                Cantidad de Barras / Moldes
-              </label>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCantidadBarras((prev) => Math.max(1, prev - 1))}
-                  className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                  title="Disminuir barra"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-
-                <div className="flex-1 text-center bg-white border border-slate-300 py-2 rounded-xl shadow-xs">
-                  <span className="text-lg font-black text-slate-900 block leading-tight">
-                    {cantidadBarras}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                    {cantidadBarras === 1 ? 'Barra' : 'Barras'}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setCantidadBarras((prev) => prev + 1)}
-                  className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                  title="Aumentar barra"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-[11px] text-slate-500 pt-1">
-                Peso neto total del lote: <strong>{calculos.totalNetoLote}g</strong>
-              </p>
-            </div>
-
-          </div>
-
-          {/* 2. CONTROL DEL PORCENTAJE DE ADITIVOS (Rango 3.0% a 6.0% con step 0.1) */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Porcentaje de Aditivos Permitido
-                </label>
-                <p className="text-[11px] text-slate-500">
-                  Rango recomendado: de <strong>3.0%</strong> a <strong>6.0%</strong> (paso ±0.1%)
-                </p>
-              </div>
-
-              {/* Stepper de Porcentaje (▲ y ▼ en 0.1) */}
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => ajustarPorcentaje(-0.1)}
-                  disabled={porcentajeAditivos <= 3.0}
-                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
-                  title="Disminuir 0.1%"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-
-                <div className="min-w-[90px] text-center bg-slate-50 border-2 border-brand-500/30 py-1.5 px-3 rounded-xl shadow-inner">
-                  <span className="text-xl font-black text-brand-700">
-                    {calculos.pctAditivos.toFixed(1)}%
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => ajustarPorcentaje(+0.1)}
-                  disabled={porcentajeAditivos >= 6.0}
-                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
-                  title="Aumentar 0.1%"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Selector rápido de porcentajes típicos */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-100">
-              <span className="text-[10px] text-slate-400 font-semibold mr-1">Valores típicos:</span>
-              {PORCENTAJES_RAPIDOS.map((pct) => (
-                <button
-                  key={pct}
-                  type="button"
-                  onClick={() => setPorcentajeAditivos(pct)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                    calculos.pctAditivos === pct
-                      ? 'bg-amber-600 text-white shadow-xs scale-102'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-                  }`}
-                >
-                  {pct.toFixed(1)}%
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* 3. TARJETAS DE RESULTADOS PRINCIPALES */}
