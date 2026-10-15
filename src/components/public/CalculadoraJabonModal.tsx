@@ -127,7 +127,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   const [porcentajeAromaVela, setPorcentajeAromaVela] = useState<number>(9.0); // Rango 5.0% a 12.0%
   const [mostrarDetallesVelas, setMostrarDetallesVelas] = useState<boolean>(false);
 
-  const RECIPIENTES_RAPIDOS_VELAS = [100, 150, 200, 250, 300];
+  const RECIPIENTES_RAPIDOS_VELAS = [75, 100, 150, 200];
 
   const ajustarPesoAguaVela = (delta: number) => {
     setPesoAguaVela((prev) => {
@@ -219,13 +219,12 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabecera Principal con degradado dinámico según modo */}
-        <div className={`relative p-5 sm:p-6 text-white overflow-hidden shrink-0 transition-colors duration-300 ${
-          modoCalculadora === 'jabon'
+        <div className={`relative p-5 sm:p-6 text-white overflow-hidden shrink-0 transition-colors duration-300 ${modoCalculadora === 'jabon'
             ? 'bg-gradient-to-r from-brand-900 via-brand-800 to-emerald-900'
             : tipoCeraSoja === 'bpf'
-            ? 'bg-gradient-to-r from-amber-950 via-stone-900 to-orange-950'
-            : 'bg-gradient-to-r from-stone-900 via-amber-950 to-amber-900'
-        }`}>
+              ? 'bg-gradient-to-r from-amber-950 via-stone-900 to-orange-950'
+              : 'bg-gradient-to-r from-stone-900 via-amber-950 to-amber-900'
+          }`}>
           <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -left-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -251,16 +250,15 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-extrabold uppercase tracking-wider ${
-                  modoCalculadora === 'jabon'
+                <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-extrabold uppercase tracking-wider ${modoCalculadora === 'jabon'
                     ? 'bg-emerald-500/25 border-emerald-400/30 text-emerald-200'
                     : 'bg-amber-500/25 border-amber-400/30 text-amber-200'
-                }`}>
+                  }`}>
                   {modoCalculadora === 'jabon'
                     ? 'Proporciones de Moldeo'
                     : tipoCeraSoja === 'bpf'
-                    ? 'Cera BPF (Vasos/Frascos)'
-                    : 'Cera APF (Moldes/Figuras)'}
+                      ? 'Cera BPF (Vasos/Frascos)'
+                      : 'Cera APF (Moldes/Figuras)'}
                 </span>
                 <span className="text-[11px] text-slate-300 font-medium hidden sm:inline">
                   {modoCalculadora === 'jabon'
@@ -281,11 +279,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             <button
               type="button"
               onClick={() => setModoCalculadora('jabon')}
-              className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                modoCalculadora === 'jabon'
+              className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${modoCalculadora === 'jabon'
                   ? 'bg-white text-brand-950 shadow-md'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
+                }`}
             >
               <span>🧼 Jabones de Glicerina</span>
               <span className="hidden sm:inline text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-950">
@@ -296,11 +293,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             <button
               type="button"
               onClick={() => setModoCalculadora('velas')}
-              className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                modoCalculadora === 'velas'
+              className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${modoCalculadora === 'velas'
                   ? 'bg-white text-amber-950 shadow-md'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
+                }`}
             >
               <span>🕯️ Velas de Soja (BPF / APF)</span>
               <span className="hidden sm:inline text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-950">
@@ -312,13 +308,13 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
         {/* Cuerpo Scrolleable */}
         <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-5">
-          
+
           {/* ============================================================ */}
           {/* MODO VELAS DE SOJA (BPF vs APF) */}
           {/* ============================================================ */}
           {modoCalculadora === 'velas' && (
             <div className="space-y-5 animate-in fade-in duration-200">
-              
+
               {/* SELECTOR ENTRE BPF Y APF */}
               <div className="bg-gradient-to-r from-amber-50 to-stone-50 p-3 sm:p-4 rounded-2xl border border-amber-200 space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -335,11 +331,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCambiarTipoCera('bpf')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      tipoCeraSoja === 'bpf'
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${tipoCeraSoja === 'bpf'
                         ? 'bg-white border-amber-500 shadow-md ring-2 ring-amber-500/20'
                         : 'bg-white/70 border-slate-200 hover:bg-white text-slate-700'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-black text-xs text-slate-900 flex items-center gap-1.5">
@@ -361,11 +356,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCambiarTipoCera('apf')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      tipoCeraSoja === 'apf'
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${tipoCeraSoja === 'apf'
                         ? 'bg-white border-amber-600 shadow-md ring-2 ring-amber-600/20'
                         : 'bg-white/70 border-slate-200 hover:bg-white text-slate-700'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-black text-xs text-slate-900 flex items-center gap-1.5">
@@ -387,7 +381,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
               {/* 1. SECCIÓN DE INPUTS DE VELAS */}
               <div className="bg-amber-50/60 p-4 sm:p-5 rounded-2xl border border-amber-200/90 space-y-4">
-                
+
                 {/* Explicación de cabecera */}
                 <div className="flex items-start gap-2.5 text-xs text-amber-950 bg-white/80 p-3 rounded-xl border border-amber-200/80">
                   <Scale className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -403,7 +397,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
+
                   {/* Input 1: Peso en Agua del Recipiente/Molde */}
                   <div className="space-y-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -455,11 +449,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                           key={p}
                           type="button"
                           onClick={() => setPesoAguaVela(p)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                            pesoAguaVela === p
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${pesoAguaVela === p
                               ? 'bg-amber-700 text-white shadow-xs scale-102'
                               : 'bg-white hover:bg-amber-100 text-slate-700 border border-slate-200'
-                          }`}
+                            }`}
                         >
                           {p}g
                         </button>
@@ -561,11 +554,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                           key={pct}
                           type="button"
                           onClick={() => setPorcentajeAromaVela(pct)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                            calculosVela.pctAroma === pct
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${calculosVela.pctAroma === pct
                               ? 'bg-amber-800 text-white shadow-xs scale-102'
                               : 'bg-white hover:bg-amber-100 text-amber-950 border border-amber-200'
-                          }`}
+                            }`}
                         >
                           {pct.toFixed(1)}% {pct === 8 ? '(Suave)' : pct === 9 ? '(Ideal Vaso)' : '(Intenso)'}
                         </button>
@@ -576,11 +568,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                           key={pct}
                           type="button"
                           onClick={() => setPorcentajeAromaVela(pct)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                            calculosVela.pctAroma === pct
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${calculosVela.pctAroma === pct
                               ? 'bg-amber-800 text-white shadow-xs scale-102'
                               : 'bg-white hover:bg-amber-100 text-amber-950 border border-amber-200'
-                          }`}
+                            }`}
                         >
                           {pct.toFixed(1)}% {pct === 6 ? '(Económico)' : pct === 7 ? '(Ideal Figura)' : pct === 8 ? '(Máx Molde)' : '(Wax Melts)'}
                         </button>
@@ -621,7 +612,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
                 {/* 2 Columnas: Cera de Soja vs Aroma */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  
+
                   {/* Tarjeta 1: Cera de Soja Pura */}
                   <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/70 border-2 border-amber-400/80 shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between text-amber-900 mb-1">
@@ -793,7 +784,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
-                  
+
                   {/* Tip 1: Precalentar molde o recipiente */}
                   <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80 shadow-xs space-y-1">
                     <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
@@ -801,7 +792,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                       <span>1. Precalentar el molde o recipiente</span>
                     </div>
                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                      Pasa una pistola de calor o secador suave por el vaso o molde antes de verter. 
+                      Pasa una pistola de calor o secador suave por el vaso o molde antes de verter.
                       Evita el choque térmico, previene manchas húmedas (<em>wet spots</em> donde la cera se despega del cristal) y elimina marcas de estrías en moldes de silicona.
                     </p>
                   </div>
@@ -889,19 +880,19 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
           {/* ============================================================ */}
           {modoCalculadora === 'jabon' && (
             <div className="space-y-5 animate-in fade-in duration-200">
-              
+
               {/* 1. SECCIÓN DE INPUTS Y PARÁMETROS */}
               <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
-                
+
                 {/* Fila 1: Peso Deseado y Cantidad de Barras */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
+
                   {/* Input: Peso Deseado por Barra con stepper +/- 10 */}
                   <div className="space-y-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                       Peso Deseado por Barra
                     </label>
-                    
+
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -953,11 +944,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                             setPesoDeseadoJabon(p);
                             setGotasFraganciaManual(null);
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                            pesoDeseadoJabon === p
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${pesoDeseadoJabon === p
                               ? 'bg-brand-600 text-white shadow-xs scale-102'
                               : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
-                          }`}
+                            }`}
                         >
                           {p}g
                         </button>
@@ -1054,11 +1044,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                         key={pct}
                         type="button"
                         onClick={() => setPorcentajeAditivos(pct)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                          calculosJabon.pctAditivos === pct
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${calculosJabon.pctAditivos === pct
                             ? 'bg-amber-600 text-white shadow-xs scale-102'
                             : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200/80 shadow-xs'
-                        }`}
+                          }`}
                       >
                         {pct.toFixed(1)}%
                       </button>
@@ -1087,7 +1076,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  
+
                   {/* Base de Glicerina */}
                   <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/60 border-2 border-emerald-300/80 shadow-sm relative overflow-hidden">
                     <div className="flex items-center justify-between text-emerald-800 mb-1">
@@ -1193,12 +1182,11 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   </div>
 
                   <label className="inline-flex items-center gap-3 cursor-pointer select-none shrink-0 bg-white px-3.5 py-2 rounded-xl border border-purple-200 shadow-xs hover:border-purple-300 transition-all">
-                    <span className={`text-xs font-bold transition-colors ${
-                      incluirFraganciaJabon ? 'text-purple-900' : 'text-slate-400'
-                    }`}>
+                    <span className={`text-xs font-bold transition-colors ${incluirFraganciaJabon ? 'text-purple-900' : 'text-slate-400'
+                      }`}>
                       {incluirFraganciaJabon ? 'Con fragancia' : 'Sin fragancia'}
                     </span>
-                    
+
                     <div className="relative inline-flex items-center">
                       <input
                         type="checkbox"
@@ -1323,7 +1311,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
         {/* Footer de Acciones */}
         <div className="p-4 sm:p-5 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          
+
           <button
             type="button"
             onClick={() => setIsApoyoModalOpen(true)}
@@ -1350,11 +1338,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   onClose();
                   onIrAlLaboratorio();
                 }}
-                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer ${
-                  modoCalculadora === 'jabon'
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer ${modoCalculadora === 'jabon'
                     ? 'bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 shadow-brand-600/25'
                     : 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 shadow-amber-600/25'
-                }`}
+                  }`}
               >
                 <span>Formular & Costear</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -1362,9 +1349,8 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-              <span className={`w-2 h-2 rounded-full inline-block ${
-                modoCalculadora === 'jabon' ? 'bg-emerald-500' : 'bg-amber-500'
-              }`} />
+              <span className={`w-2 h-2 rounded-full inline-block ${modoCalculadora === 'jabon' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`} />
               <span>Jabhaco Lab • {modoCalculadora === 'jabon' ? 'Proporciones Jaboneras' : 'Formulación de Velas de Soja'}</span>
             </div>
           )}
