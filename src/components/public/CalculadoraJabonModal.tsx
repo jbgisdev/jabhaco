@@ -119,15 +119,15 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   }, [pesoDeseadoJabon, cantidadBarras, factorMolde, porcentajeAditivos, incluirFraganciaJabon, gotasFraganciaManual]);
 
   // ==========================================
-  // ESTADOS MODO VELAS DE SOJA
+  // ESTADOS MODO VELAS DE SOJA (BPF vs APF)
   // ==========================================
+  const [tipoCeraSoja, setTipoCeraSoja] = useState<'bpf' | 'apf'>('bpf');
   const [pesoAguaVela, setPesoAguaVela] = useState<number>(200); // gramos de agua que caben en el molde/recipiente
   const [cantidadVelas, setCantidadVelas] = useState<number>(1); // número de velas
-  const [porcentajeAromaVela, setPorcentajeAromaVela] = useState<number>(9.0); // Rango 6.0% a 12.0% (Recomendado 8% a 10%)
+  const [porcentajeAromaVela, setPorcentajeAromaVela] = useState<number>(9.0); // Rango 5.0% a 12.0%
   const [mostrarDetallesVelas, setMostrarDetallesVelas] = useState<boolean>(false);
 
   const RECIPIENTES_RAPIDOS_VELAS = [100, 150, 200, 250, 300];
-  const PORCENTAJES_RAPIDOS_VELAS = [8.0, 9.0, 10.0];
 
   const ajustarPesoAguaVela = (delta: number) => {
     setPesoAguaVela((prev) => {
@@ -139,24 +139,35 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   const ajustarPorcentajeAromaVela = (delta: number) => {
     setPorcentajeAromaVela((prev) => {
       const nuevo = Math.round((prev + delta) * 10) / 10;
-      return Math.min(12.0, Math.max(5.0, nuevo));
+      return Math.min(12.0, Math.max(4.0, nuevo));
     });
+  };
+
+  const handleCambiarTipoCera = (tipo: 'bpf' | 'apf') => {
+    setTipoCeraSoja(tipo);
+    if (tipo === 'apf') {
+      // APF para moldes decorativos: recomendado 6% a 8%
+      setPorcentajeAromaVela((prev) => (prev > 8.0 ? 7.0 : prev < 6.0 ? 6.0 : prev));
+    } else {
+      // BPF para vasos: recomendado 8% a 10%
+      setPorcentajeAromaVela((prev) => (prev < 8.0 ? 9.0 : prev));
+    }
   };
 
   const calculosVela = useMemo(() => {
     const aguaPorRecipiente = Math.max(10, pesoAguaVela || 0);
     const velas = Math.max(1, cantidadVelas || 1);
-    const pctAroma = Math.min(12.0, Math.max(5.0, Math.round((porcentajeAromaVela || 9.0) * 10) / 10));
+    const pctAroma = Math.min(12.0, Math.max(4.0, Math.round((porcentajeAromaVela || (tipoCeraSoja === 'bpf' ? 9.0 : 7.0)) * 10) / 10));
 
     // 1. Agua total requerida para el lote de recipientes
     const totalAguaLote = aguaPorRecipiente * velas;
 
     // 2. Factor densidad cera de soja = 0.90
-    // La cera vegetal fundida tiene menor densidad que el agua (~0.90 g/ml)
+    // La cera vegetal fundida tiene menor densidad que el agua (~0.90 g/ml) tanto en BPF como en APF
     const factorDensidad = 0.90;
     const totalCeraMezclaLote = totalAguaLote * factorDensidad; // Peso total que llenará los recipientes
 
-    // 3. Gramos de esencia / aroma aromático según el porcentaje (8% a 10%)
+    // 3. Gramos de esencia / aroma aromático según el porcentaje
     const totalGramosAroma = totalCeraMezclaLote * (pctAroma / 100);
 
     // 4. Gramos de Cera de Soja pura = Total Mezcla - Gramos de Aroma
@@ -181,7 +192,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
       ceraSojaPorVela,
       aromaPorVela,
     };
-  }, [pesoAguaVela, cantidadVelas, porcentajeAromaVela]);
+  }, [pesoAguaVela, cantidadVelas, porcentajeAromaVela, tipoCeraSoja]);
 
   const handleReset = () => {
     if (modoCalculadora === 'jabon') {
@@ -192,6 +203,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
       setIncluirFraganciaJabon(true);
       setGotasFraganciaManual(null);
     } else {
+      setTipoCeraSoja('bpf');
       setPesoAguaVela(200);
       setCantidadVelas(1);
       setPorcentajeAromaVela(9.0);
@@ -210,7 +222,9 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
         <div className={`relative p-5 sm:p-6 text-white overflow-hidden shrink-0 transition-colors duration-300 ${
           modoCalculadora === 'jabon'
             ? 'bg-gradient-to-r from-brand-900 via-brand-800 to-emerald-900'
-            : 'bg-gradient-to-r from-amber-950 via-stone-900 to-orange-950'
+            : tipoCeraSoja === 'bpf'
+            ? 'bg-gradient-to-r from-amber-950 via-stone-900 to-orange-950'
+            : 'bg-gradient-to-r from-stone-900 via-amber-950 to-amber-900'
         }`}>
           <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -left-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
@@ -242,21 +256,27 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                     ? 'bg-emerald-500/25 border-emerald-400/30 text-emerald-200'
                     : 'bg-amber-500/25 border-amber-400/30 text-amber-200'
                 }`}>
-                  {modoCalculadora === 'jabon' ? 'Proporciones de Moldeo' : 'Cera de Soja • Densidad 0.9'}
+                  {modoCalculadora === 'jabon'
+                    ? 'Proporciones de Moldeo'
+                    : tipoCeraSoja === 'bpf'
+                    ? 'Cera BPF (Vasos/Frascos)'
+                    : 'Cera APF (Moldes/Figuras)'}
                 </span>
                 <span className="text-[11px] text-slate-300 font-medium hidden sm:inline">
                   {modoCalculadora === 'jabon'
                     ? `Regla x1.2 • Aditivos ${calculosJabon.pctAditivos}%`
-                    : `Agua x0.9 • Aroma ${calculosVela.pctAroma}% (8% a 10%)`}
+                    : `Agua x0.9 • Aroma ${calculosVela.pctAroma}%`}
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
-                {modoCalculadora === 'jabon' ? 'Calculadora Jabonera Jabhaco' : 'Calculadora de Velas de Soja'}
+                {modoCalculadora === 'jabon'
+                  ? 'Calculadora Jabonera Jabhaco'
+                  : `Calculadora de Velas (${tipoCeraSoja === 'bpf' ? 'Soja BPF' : 'Soja APF'})`}
               </h2>
             </div>
           </div>
 
-          {/* Selector de Pestaña: Jabones vs Velas */}
+          {/* Selector de Pestaña Principal: Jabones vs Velas */}
           <div className="mt-4 bg-black/25 p-1 rounded-2xl border border-white/10 grid grid-cols-2 gap-1 backdrop-blur-sm">
             <button
               type="button"
@@ -282,7 +302,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
-              <span>🕯️ Velas de Soja</span>
+              <span>🕯️ Velas de Soja (BPF / APF)</span>
               <span className="hidden sm:inline text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-950">
                 x0.9
               </span>
@@ -294,11 +314,77 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
         <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-5">
           
           {/* ============================================================ */}
-          {/* MODO VELAS DE SOJA (NUEVO) */}
+          {/* MODO VELAS DE SOJA (BPF vs APF) */}
           {/* ============================================================ */}
           {modoCalculadora === 'velas' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               
+              {/* SELECTOR ENTRE BPF Y APF */}
+              <div className="bg-gradient-to-r from-amber-50 to-stone-50 p-3 sm:p-4 rounded-2xl border border-amber-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                    <span>Selecciona el Tipo de Cera de Soja:</span>
+                  </span>
+                  <span className="text-[11px] font-bold text-amber-800">
+                    {tipoCeraSoja === 'bpf' ? 'Punto Fusión ~45°-50°C' : 'Punto Fusión ~58°-65°C'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Opción 1: BPF */}
+                  <button
+                    type="button"
+                    onClick={() => handleCambiarTipoCera('bpf')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      tipoCeraSoja === 'bpf'
+                        ? 'bg-white border-amber-500 shadow-md ring-2 ring-amber-500/20'
+                        : 'bg-white/70 border-slate-200 hover:bg-white text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-xs text-slate-900 flex items-center gap-1.5">
+                        <span>🏺 Cera BPF</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900">
+                          Para Vasos
+                        </span>
+                      </span>
+                      {tipoCeraSoja === 'bpf' && (
+                        <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      <strong>Bajo Punto de Fusión:</strong> Blanda y cremosa. Ideal para velas en frascos, vasos o latas. Soporta <strong>8% a 10%</strong> de fragancia.
+                    </p>
+                  </button>
+
+                  {/* Opción 2: APF */}
+                  <button
+                    type="button"
+                    onClick={() => handleCambiarTipoCera('apf')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      tipoCeraSoja === 'apf'
+                        ? 'bg-white border-amber-600 shadow-md ring-2 ring-amber-600/20'
+                        : 'bg-white/70 border-slate-200 hover:bg-white text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-xs text-slate-900 flex items-center gap-1.5">
+                        <span>🏛️ Cera APF</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-200 text-amber-950">
+                          Para Moldes
+                        </span>
+                      </span>
+                      {tipoCeraSoja === 'apf' && (
+                        <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      <strong>Alto Punto de Fusión:</strong> Cera dura que contrae al enfriar. Ideal para moldes de silicona, figuras decorativas y wax melts. Recomendado <strong>6% a 8%</strong> de aroma.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
               {/* 1. SECCIÓN DE INPUTS DE VELAS */}
               <div className="bg-amber-50/60 p-4 sm:p-5 rounded-2xl border border-amber-200/90 space-y-4">
                 
@@ -306,10 +392,12 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 <div className="flex items-start gap-2.5 text-xs text-amber-950 bg-white/80 p-3 rounded-xl border border-amber-200/80">
                   <Scale className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-extrabold block text-amber-900">Método de Pesaje con Agua:</span>
+                    <span className="font-extrabold block text-amber-900">
+                      Pesaje de Molde en Agua (Regla x0.9):
+                    </span>
                     <span>
                       Llena tu molde o vaso con agua hasta el nivel deseado de la vela y pésalo en la báscula.
-                      Ese peso se multiplica por <strong>0.9</strong> (densidad de la cera de soja), y luego se descuenta el porcentaje de aroma (<strong>8% a 10%</strong>).
+                      Ese peso se multiplica por <strong>0.9</strong> (densidad cera de soja), y se descuenta el aroma.
                     </span>
                   </div>
                 </div>
@@ -319,7 +407,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   {/* Input 1: Peso en Agua del Recipiente/Molde */}
                   <div className="space-y-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Capacidad en Agua del Recipiente
+                      Capacidad en Agua del {tipoCeraSoja === 'bpf' ? 'Vaso / Envase' : 'Molde / Figura'}
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -418,15 +506,19 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
                 </div>
 
-                {/* Fila 2: Porcentaje de Aroma Recomendado (8% a 10%) */}
+                {/* Fila 2: Porcentaje de Aroma (Adaptado según BPF o APF) */}
                 <div className="border-t border-amber-200/90 pt-3.5 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Porcentaje de Esencia Aromática
+                        Porcentaje de Esencia Aromática ({tipoCeraSoja === 'bpf' ? 'Cera BPF' : 'Cera APF'})
                       </label>
                       <p className="text-[11px] text-slate-500">
-                        Recomendado para cera de soja: <strong>8.0%</strong> a <strong>10.0%</strong>
+                        {tipoCeraSoja === 'bpf' ? (
+                          <>Recomendado para vasos: <strong>8.0% a 10.0%</strong></>
+                        ) : (
+                          <>Recomendado para moldes/figuras: <strong>6.0% a 8.0%</strong> (máx 10% en wax melts)</>
+                        )}
                       </p>
                     </div>
 
@@ -435,7 +527,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                       <button
                         type="button"
                         onClick={() => ajustarPorcentajeAromaVela(-0.5)}
-                        disabled={porcentajeAromaVela <= 5.0}
+                        disabled={porcentajeAromaVela <= 4.0}
                         className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
                         title="Disminuir 0.5%"
                       >
@@ -460,24 +552,51 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Pills rápidas de porcentaje de aroma */}
+                  {/* Pills rápidas de porcentaje según tipo de cera */}
                   <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-amber-200/60">
                     <span className="text-[10px] text-slate-400 font-semibold mr-1">Rápido:</span>
-                    {PORCENTAJES_RAPIDOS_VELAS.map((pct) => (
-                      <button
-                        key={pct}
-                        type="button"
-                        onClick={() => setPorcentajeAromaVela(pct)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                          calculosVela.pctAroma === pct
-                            ? 'bg-amber-800 text-white shadow-xs scale-102'
-                            : 'bg-white hover:bg-amber-100 text-amber-950 border border-amber-200'
-                        }`}
-                      >
-                        {pct.toFixed(1)}% {pct === 8 ? '(Suave)' : pct === 9 ? '(Ideal)' : '(Intenso)'}
-                      </button>
-                    ))}
+                    {tipoCeraSoja === 'bpf' ? (
+                      [8.0, 9.0, 10.0].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setPorcentajeAromaVela(pct)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                            calculosVela.pctAroma === pct
+                              ? 'bg-amber-800 text-white shadow-xs scale-102'
+                              : 'bg-white hover:bg-amber-100 text-amber-950 border border-amber-200'
+                          }`}
+                        >
+                          {pct.toFixed(1)}% {pct === 8 ? '(Suave)' : pct === 9 ? '(Ideal Vaso)' : '(Intenso)'}
+                        </button>
+                      ))
+                    ) : (
+                      [6.0, 7.0, 8.0, 10.0].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setPorcentajeAromaVela(pct)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                            calculosVela.pctAroma === pct
+                              ? 'bg-amber-800 text-white shadow-xs scale-102'
+                              : 'bg-white hover:bg-amber-100 text-amber-950 border border-amber-200'
+                          }`}
+                        >
+                          {pct.toFixed(1)}% {pct === 6 ? '(Económico)' : pct === 7 ? '(Ideal Figura)' : pct === 8 ? '(Máx Molde)' : '(Wax Melts)'}
+                        </button>
+                      ))
+                    )}
                   </div>
+
+                  {/* Advertencia técnica para cera APF */}
+                  {tipoCeraSoja === 'apf' && calculosVela.pctAroma > 8.0 && (
+                    <div className="p-2.5 rounded-xl bg-amber-100/80 border border-amber-300 text-[11px] text-amber-900 flex items-start gap-2">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>Atención para velas en molde:</strong> Con más del 8% de aroma, las figuras decorativas pueden sudar aceite en la superficie o perder dureza al desmoldar. Mantén entre 6% y 8% a menos que estés fabricando *wax melts* (pastillas para quemador).
+                      </span>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -508,7 +627,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                     <div className="flex items-center justify-between text-amber-900 mb-1">
                       <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
                         <Flame className="w-4 h-4 text-amber-600" />
-                        Cera de Soja a Pesar y Fundir
+                        Cera de Soja ({tipoCeraSoja.toUpperCase()}) a Pesar y Fundir
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-950">
                         {(100 - calculosVela.pctAroma).toFixed(1)}%
@@ -524,7 +643,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
                     <p className="text-[11px] text-amber-900/90 leading-tight">
                       {calculosVela.velas > 1 ? (
-                        <>Equivale a <strong>{formatDecimal(calculosVela.ceraSojaPorVela, 1)}g</strong> de cera de soja por cada vela.</>
+                        <>Equivale a <strong>{formatDecimal(calculosVela.ceraSojaPorVela, 1)}g</strong> de cera por cada vela.</>
                       ) : (
                         <>Cera pura tras descontar los <strong>{formatDecimal(calculosVela.totalGramosAroma, 1)}g</strong> de esencia.</>
                       )}
@@ -566,7 +685,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-1.5">
                     <span className="flex items-center gap-1 text-amber-900">
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                      Cera de Soja ({(100 - calculosVela.pctAroma).toFixed(1)}% = {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g)
+                      Cera Soja {tipoCeraSoja.toUpperCase()} ({(100 - calculosVela.pctAroma).toFixed(1)}% = {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g)
                     </span>
                     <span className="flex items-center gap-1 text-purple-900">
                       <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" />
@@ -587,43 +706,76 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
-                    <span>Peso total vertido en recipiente ({calculosVela.totalAguaLote}g agua × 0.9): <strong>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</strong></span>
-                    <span>Densidad soja: <strong>0.90 g/ml</strong></span>
+                    <span>Peso total vertido ({calculosVela.totalAguaLote}g agua × 0.9): <strong>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</strong></span>
+                    <span>Densidad cera: <strong>0.90 g/ml</strong></span>
                   </div>
                 </div>
               </div>
 
-              {/* 3. GUÍA DE TEMPERATURAS PARA CERA DE SOJA (VALOR TÉCNICO PROFESIONAL) */}
+              {/* 3. GUÍA DE TEMPERATURAS ADAPTADA SEGÚN BPF O APF */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-stone-50 via-amber-50/40 to-stone-100/70 border border-amber-200/80 space-y-2.5">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
-                  <Thermometer className="w-4 h-4 text-amber-700" />
-                  Temperaturas Clave de Taller (Cera de Soja)
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
-                  <div className="bg-white p-2.5 rounded-xl border border-amber-200/80 shadow-xs">
-                    <span className="text-[10px] font-bold text-amber-700 uppercase block">1. Fundir Cera</span>
-                    <span className="text-base font-black text-slate-900 block">70°C – 75°C</span>
-                    <span className="text-[10px] text-slate-500">Al baño maría suave sin sobrecalentar</span>
-                  </div>
-
-                  <div className="bg-white p-2.5 rounded-xl border border-purple-200/80 shadow-xs">
-                    <span className="text-[10px] font-bold text-purple-700 uppercase block">2. Agregar Aroma</span>
-                    <span className="text-base font-black text-slate-900 block">60°C – 65°C</span>
-                    <span className="text-[10px] text-slate-500">Revolver despacio durante 2 minutos</span>
-                  </div>
-
-                  <div className="bg-white p-2.5 rounded-xl border border-emerald-200/80 shadow-xs">
-                    <span className="text-[10px] font-bold text-emerald-700 uppercase block">3. Verter al Vaso</span>
-                    <span className="text-base font-black text-slate-900 block">50°C – 55°C</span>
-                    <span className="text-[10px] text-slate-500">Vaso tibio para evitar túnel o rechupe</span>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                    <Thermometer className="w-4 h-4 text-amber-700" />
+                    Temperaturas Clave de Taller ({tipoCeraSoja === 'bpf' ? 'Cera Soja BPF para Vasos' : 'Cera Soja APF para Moldes'})
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-950">
+                    {tipoCeraSoja === 'bpf' ? 'PF ~45°-50°C' : 'PF ~58°-65°C'}
+                  </span>
                 </div>
+
+                {tipoCeraSoja === 'bpf' ? (
+                  /* Temperaturas para BPF */
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div className="bg-white p-2.5 rounded-xl border border-amber-200/80 shadow-xs">
+                      <span className="text-[10px] font-bold text-amber-700 uppercase block">1. Fundir Cera</span>
+                      <span className="text-base font-black text-slate-900 block">70°C – 75°C</span>
+                      <span className="text-[10px] text-slate-500">Baño maría suave sin sobrecalentar</span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl border border-purple-200/80 shadow-xs">
+                      <span className="text-[10px] font-bold text-purple-700 uppercase block">2. Agregar Aroma</span>
+                      <span className="text-base font-black text-slate-900 block">60°C – 65°C</span>
+                      <span className="text-[10px] text-slate-500">Revolver despacio durante 2 minutos</span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl border border-emerald-200/80 shadow-xs">
+                      <span className="text-[10px] font-bold text-emerald-700 uppercase block">3. Verter al Vaso</span>
+                      <span className="text-base font-black text-slate-900 block">50°C – 55°C</span>
+                      <span className="text-[10px] text-slate-500">Vaso templado para evitar túnel y desprendimiento</span>
+                    </div>
+                  </div>
+                ) : (
+                  /* Temperaturas para APF (MOLDES/FIGURAS) */
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div className="bg-white p-2.5 rounded-xl border border-amber-200/80 shadow-xs">
+                      <span className="text-[10px] font-bold text-amber-700 uppercase block">1. Fundir Cera APF</span>
+                      <span className="text-base font-black text-slate-900 block">75°C – 80°C</span>
+                      <span className="text-[10px] text-slate-500">Punto más alto para disolver cristales duros</span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl border border-purple-200/80 shadow-xs">
+                      <span className="text-[10px] font-bold text-purple-700 uppercase block">2. Agregar Aroma</span>
+                      <span className="text-base font-black text-slate-900 block">65°C – 70°C</span>
+                      <span className="text-[10px] text-slate-500">Mezclar suavemente durante 2 minutos</span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-xl border border-emerald-200/80 shadow-xs">
+                      <span className="text-[10px] font-bold text-emerald-700 uppercase block">3. Verter al Molde</span>
+                      <span className="text-base font-black text-slate-900 block">60°C – 65°C</span>
+                      <span className="text-[10px] text-slate-500">Evita líneas frías y marcas en las figuras</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-2.5 rounded-xl bg-white/70 border border-amber-200/60 text-[11px] text-slate-600 flex items-center gap-2">
                   <Info className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                   <span>
-                    <strong>Curado recomendado:</strong> Dejar reposar la vela mínimo <strong>48 horas</strong> a temperatura ambiente antes de encender (ideal 7 a 14 días para máxima difusión aromática).
+                    {tipoCeraSoja === 'bpf' ? (
+                      <><strong>Tip BPF:</strong> Deja reposar la vela mínimo <strong>48 horas</strong> a temperatura ambiente antes de encender (ideal 7 a 14 días para mayor intensidad aromática).</>
+                    ) : (
+                      <><strong>Tip APF:</strong> Deja enfriar el molde mínimo <strong>6 a 12 horas</strong> a temperatura ambiente. Desmolda solo cuando la figura esté completamente fría y contraída naturalmente.</>
+                    )}
                   </span>
                 </div>
               </div>
@@ -636,7 +788,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 >
                   <span className="font-bold text-slate-800 flex items-center gap-1.5">
                     <HelpCircle className="w-3.5 h-3.5 text-amber-700" />
-                    ¿Cómo funciona exactamente la fórmula de la vela?
+                    ¿Cómo funciona exactamente la fórmula para cera {tipoCeraSoja.toUpperCase()}?
                   </span>
                   <button type="button" className="text-amber-800 font-semibold hover:underline text-[11px]">
                     {mostrarDetallesVelas ? 'Ocultar paso a paso' : 'Ver desglose paso a paso'}
@@ -646,19 +798,19 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 {mostrarDetallesVelas && (
                   <div className="pt-2 border-t border-slate-200 space-y-1.5 font-mono text-[11px] text-slate-700 bg-white p-3 rounded-xl border">
                     <p>
-                      <strong>Paso 1 (Capacidad en Agua):</strong> El recipiente contiene <code>{calculosVela.aguaPorVela}g de agua</code> ({calculosVela.velas} vela(s) = <code>{calculosVela.totalAguaLote}g</code>).
+                      <strong>Paso 1 (Capacidad en Agua):</strong> El molde o envase contiene <code>{calculosVela.aguaPorVela}g de agua</code> ({calculosVela.velas} vela(s) = <code>{calculosVela.totalAguaLote}g</code>).
                     </p>
                     <p>
-                      <strong>Paso 2 (Multiplicar por 0.9):</strong> Densidad de cera de soja = <code>{calculosVela.totalAguaLote}g × 0.9 = {formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g de vela total</code>.
+                      <strong>Paso 2 (Multiplicar por 0.9):</strong> Densidad soja {tipoCeraSoja.toUpperCase()} = <code>{calculosVela.totalAguaLote}g × 0.9 = {formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g de vela total</code>.
                     </p>
                     <p>
                       <strong>Paso 3 (Calcular el {calculosVela.pctAroma}% de Aroma):</strong> <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g × {calculosVela.pctAroma}% = {formatDecimal(calculosVela.totalGramosAroma, 1)}g de fragancia</code>.
                     </p>
                     <p className="text-amber-800 font-bold">
-                      <strong>Paso 4 (Cera de Soja pura a fundir):</strong> <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g - {formatDecimal(calculosVela.totalGramosAroma, 1)}g = {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g de cera de soja</code>.
+                      <strong>Paso 4 (Cera de Soja pura a fundir):</strong> <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g - {formatDecimal(calculosVela.totalGramosAroma, 1)}g = {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g de cera {tipoCeraSoja.toUpperCase()}</code>.
                     </p>
                     <p className="text-emerald-800 font-bold pt-1 border-t border-slate-100">
-                      <strong>Comprobación:</strong> {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g cera + {formatDecimal(calculosVela.totalGramosAroma, 1)}g aroma = <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</code> (llena el molde al ras con precisión).
+                      <strong>Comprobación:</strong> {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g cera + {formatDecimal(calculosVela.totalGramosAroma, 1)}g aroma = <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</code> (llena el molde con precisión milimétrica).
                     </p>
                   </div>
                 )}
