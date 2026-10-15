@@ -11,6 +11,9 @@ import {
   FlaskConical,
   Droplets,
   Info,
+  Flame,
+  Thermometer,
+  Scale,
 } from 'lucide-react';
 import { formatDecimal } from '../../utils/formatters';
 import { ApoyarProyectoModal } from './ApoyarProyectoModal';
@@ -31,87 +34,64 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   // Modal de Apoyo / Nequi
   const [isApoyoModalOpen, setIsApoyoModalOpen] = useState(false);
 
-  // 1. Estado de inputs principales
-  const [pesoDeseado, setPesoDeseado] = useState<number>(100); // gramos por barra
+  // Selector de Modo: 'jabon' | 'velas'
+  const [modoCalculadora, setModoCalculadora] = useState<'jabon' | 'velas'>('jabon');
+
+  // ==========================================
+  // ESTADOS MODO JABÓN
+  // ==========================================
+  const [pesoDeseadoJabon, setPesoDeseadoJabon] = useState<number>(100); // gramos por barra
   const [cantidadBarras, setCantidadBarras] = useState<number>(1); // número de barras
   const [factorMolde, setFactorMolde] = useState<number>(1.2); // factor 1.2
   const [porcentajeAditivos, setPorcentajeAditivos] = useState<number>(3.0); // Rango 3.0% a 6.0% con step 0.1
-
-  // 2. Estado de Fragancia (Opcional con regla de 12 gotas / 0.5g por 100g)
-  const [incluirFragancia, setIncluirFragancia] = useState<boolean>(true);
+  const [incluirFraganciaJabon, setIncluirFraganciaJabon] = useState<boolean>(true);
   const [gotasFraganciaManual, setGotasFraganciaManual] = useState<number | null>(null);
+  const [mostrarDetallesJabon, setMostrarDetallesJabon] = useState<boolean>(false);
 
-  // Estados visuales
-  const [mostrarDetallesAvanzados, setMostrarDetallesAvanzados] = useState<boolean>(false);
+  const PESOS_PREDETERMINADOS_JABON = [50, 80, 100, 120];
+  const PORCENTAJES_RAPIDOS_JABON = [3.0, 3.5, 4.0];
 
-  // Pills rápidas
-  const PESOS_PREDETERMINADOS = [50, 80, 100, 120];
-  const PORCENTAJES_RAPIDOS = [3.0, 3.5, 4.0];
-
-  // Modificar peso deseado de 10 en 10
-  const ajustarPeso = (delta: number) => {
-    setPesoDeseado((prev) => {
+  const ajustarPesoJabon = (delta: number) => {
+    setPesoDeseadoJabon((prev) => {
       const base = prev || 0;
-      const nuevo = Math.max(10, Math.round((base + delta) / 10) * 10);
-      return nuevo;
+      return Math.max(10, Math.round((base + delta) / 10) * 10);
     });
     setGotasFraganciaManual(null);
   };
 
-  // Modificar porcentaje con paso de 0.1 dentro del rango [3.0, 6.0]
-  const ajustarPorcentaje = (delta: number) => {
+  const ajustarPorcentajeJabon = (delta: number) => {
     setPorcentajeAditivos((prev) => {
       const nuevo = Math.round((prev + delta) * 10) / 10;
       return Math.min(6.0, Math.max(3.0, nuevo));
     });
   };
 
-  // Cálculos reactivos
-  const calculos = useMemo(() => {
-    const pesoNetoUnitario = Math.max(1, pesoDeseado || 0);
+  const calculosJabon = useMemo(() => {
+    const pesoNetoUnitario = Math.max(1, pesoDeseadoJabon || 0);
     const barras = Math.max(1, cantidadBarras || 1);
     const factor = Math.max(1, factorMolde || 1.2);
-    // Clampeado estricto entre 3.0 y 6.0
     const pctAditivos = Math.min(6.0, Math.max(3.0, Math.round((porcentajeAditivos || 3.0) * 10) / 10));
 
-    // 1. Total peso neto deseado del lote
     const totalNetoLote = pesoNetoUnitario * barras;
-
-    // 2. Total mezcla requerida multiplicando por factor (1.2)
-    // Ejemplo: 100g * 1.2 = 120g (o para 50g: 50g * 1.2 = 60g)
     const totalMezclaLote = totalNetoLote * factor;
-
-    // 3. Aditivos correspondientes al porcentaje seleccionado (3% a 6%) de la mezcla total
-    // Ejemplo con 3%: 120g * 3% = 3.60g
-    // Ejemplo con 4.5%: 120g * 4.5% = 5.40g
     const totalGramosAditivos = totalMezclaLote * (pctAditivos / 100);
-
-    // 4. Base de glicerina restante (Mezcla - Aditivos)
-    // Ejemplo: 120g - 3.60g = 116.40g
     const totalGramosGlicerina = totalMezclaLote - totalGramosAditivos;
 
-    // 5. Regla de fragancia (Máximo recomendado: 100g -> 12 gotas / 0.5g; 50g -> 6 gotas / 0.25g)
-    // Gotas máximas = pesoNetoUnitario * (12 / 100) = pesoNetoUnitario * 0.12
     const maxGotasPorBarra = Math.round(pesoNetoUnitario * 0.12);
     const maxGramosFraganciaPorBarra = Number((pesoNetoUnitario * 0.005).toFixed(2));
-
     const totalMaxGotasFragancia = maxGotasPorBarra * barras;
     const totalMaxGramosFragancia = Number((maxGramosFraganciaPorBarra * barras).toFixed(2));
 
-    // Gotas actuales si está activada la fragancia
-    const gotasFraganciaActuales = incluirFragancia
+    const gotasFraganciaActuales = incluirFraganciaJabon
       ? (gotasFraganciaManual !== null ? Math.min(totalMaxGotasFragancia, Math.max(0, gotasFraganciaManual)) : totalMaxGotasFragancia)
       : 0;
 
-    // Gramos reales de fragancia (a razón de 20 gotas ≈ 1g / 0.05g por gota)
-    const gramosFraganciaActuales = incluirFragancia
+    const gramosFraganciaActuales = incluirFraganciaJabon
       ? Number(((gotasFraganciaActuales / 24) * totalMaxGramosFragancia).toFixed(2)) || Number((gotasFraganciaActuales * 0.0416).toFixed(2))
       : 0;
 
-    // Gramos restantes para otros aditivos (Extractos, vitaminas, arcillas, color)
     const gramosOtrosAditivos = Math.max(0, totalGramosAditivos - gramosFraganciaActuales);
 
-    // Valores unitarios por barra
     const glicerinaPorBarra = totalGramosGlicerina / barras;
     const aditivosPorBarra = totalGramosAditivos / barras;
     const mezclaPorBarra = totalMezclaLote / barras;
@@ -128,7 +108,6 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
       glicerinaPorBarra,
       aditivosPorBarra,
       mezclaPorBarra,
-      // Fragancia
       maxGotasPorBarra,
       maxGramosFraganciaPorBarra,
       totalMaxGotasFragancia,
@@ -137,15 +116,86 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
       gramosFraganciaActuales,
       gramosOtrosAditivos,
     };
-  }, [pesoDeseado, cantidadBarras, factorMolde, porcentajeAditivos, incluirFragancia, gotasFraganciaManual]);
+  }, [pesoDeseadoJabon, cantidadBarras, factorMolde, porcentajeAditivos, incluirFraganciaJabon, gotasFraganciaManual]);
+
+  // ==========================================
+  // ESTADOS MODO VELAS DE SOJA
+  // ==========================================
+  const [pesoAguaVela, setPesoAguaVela] = useState<number>(200); // gramos de agua que caben en el molde/recipiente
+  const [cantidadVelas, setCantidadVelas] = useState<number>(1); // número de velas
+  const [porcentajeAromaVela, setPorcentajeAromaVela] = useState<number>(9.0); // Rango 6.0% a 12.0% (Recomendado 8% a 10%)
+  const [mostrarDetallesVelas, setMostrarDetallesVelas] = useState<boolean>(false);
+
+  const RECIPIENTES_RAPIDOS_VELAS = [100, 150, 200, 250, 300];
+  const PORCENTAJES_RAPIDOS_VELAS = [8.0, 9.0, 10.0];
+
+  const ajustarPesoAguaVela = (delta: number) => {
+    setPesoAguaVela((prev) => {
+      const base = prev || 0;
+      return Math.max(10, Math.round((base + delta) / 10) * 10);
+    });
+  };
+
+  const ajustarPorcentajeAromaVela = (delta: number) => {
+    setPorcentajeAromaVela((prev) => {
+      const nuevo = Math.round((prev + delta) * 10) / 10;
+      return Math.min(12.0, Math.max(5.0, nuevo));
+    });
+  };
+
+  const calculosVela = useMemo(() => {
+    const aguaPorRecipiente = Math.max(10, pesoAguaVela || 0);
+    const velas = Math.max(1, cantidadVelas || 1);
+    const pctAroma = Math.min(12.0, Math.max(5.0, Math.round((porcentajeAromaVela || 9.0) * 10) / 10));
+
+    // 1. Agua total requerida para el lote de recipientes
+    const totalAguaLote = aguaPorRecipiente * velas;
+
+    // 2. Factor densidad cera de soja = 0.90
+    // La cera vegetal fundida tiene menor densidad que el agua (~0.90 g/ml)
+    const factorDensidad = 0.90;
+    const totalCeraMezclaLote = totalAguaLote * factorDensidad; // Peso total que llenará los recipientes
+
+    // 3. Gramos de esencia / aroma aromático según el porcentaje (8% a 10%)
+    const totalGramosAroma = totalCeraMezclaLote * (pctAroma / 100);
+
+    // 4. Gramos de Cera de Soja pura = Total Mezcla - Gramos de Aroma
+    const totalGramosCeraSoja = totalCeraMezclaLote - totalGramosAroma;
+
+    // Valores unitarios por vela
+    const aguaPorVela = aguaPorRecipiente;
+    const mezclaPorVela = totalCeraMezclaLote / velas;
+    const ceraSojaPorVela = totalGramosCeraSoja / velas;
+    const aromaPorVela = totalGramosAroma / velas;
+
+    return {
+      aguaPorVela,
+      velas,
+      factorDensidad,
+      pctAroma,
+      totalAguaLote,
+      totalCeraMezclaLote,
+      totalGramosAroma,
+      totalGramosCeraSoja,
+      mezclaPorVela,
+      ceraSojaPorVela,
+      aromaPorVela,
+    };
+  }, [pesoAguaVela, cantidadVelas, porcentajeAromaVela]);
 
   const handleReset = () => {
-    setPesoDeseado(100);
-    setCantidadBarras(1);
-    setFactorMolde(1.2);
-    setPorcentajeAditivos(3.0);
-    setIncluirFragancia(true);
-    setGotasFraganciaManual(null);
+    if (modoCalculadora === 'jabon') {
+      setPesoDeseadoJabon(100);
+      setCantidadBarras(1);
+      setFactorMolde(1.2);
+      setPorcentajeAditivos(3.0);
+      setIncluirFraganciaJabon(true);
+      setGotasFraganciaManual(null);
+    } else {
+      setPesoAguaVela(200);
+      setCantidadVelas(1);
+      setPorcentajeAromaVela(9.0);
+    }
   };
 
   if (!isOpen && !isLocked) return null;
@@ -156,10 +206,14 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
         className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 text-slate-900"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cabecera Principal con degradado botánico */}
-        <div className="relative bg-gradient-to-r from-brand-900 via-brand-800 to-emerald-900 p-5 sm:p-6 text-white overflow-hidden shrink-0">
-          <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-10 -top-10 w-40 h-40 bg-brand-500/15 rounded-full blur-2xl pointer-events-none" />
+        {/* Cabecera Principal con degradado dinámico según modo */}
+        <div className={`relative p-5 sm:p-6 text-white overflow-hidden shrink-0 transition-colors duration-300 ${
+          modoCalculadora === 'jabon'
+            ? 'bg-gradient-to-r from-brand-900 via-brand-800 to-emerald-900'
+            : 'bg-gradient-to-r from-amber-950 via-stone-900 to-orange-950'
+        }`}>
+          <div className="absolute -right-10 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
           {/* Botón Cerrar (Oculto en modo bloqueado) */}
           {!isLocked && (
@@ -172,463 +226,881 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             </button>
           )}
 
+          {/* Título de Cabecera */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0">
-              <Calculator className="w-6 h-6 text-emerald-300" />
+              {modoCalculadora === 'jabon' ? (
+                <Calculator className="w-6 h-6 text-emerald-300" />
+              ) : (
+                <Flame className="w-6 h-6 text-amber-300" />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/30 text-emerald-200 text-[10px] font-extrabold uppercase tracking-wider">
-                  Proporciones de Moldeo
+                <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-extrabold uppercase tracking-wider ${
+                  modoCalculadora === 'jabon'
+                    ? 'bg-emerald-500/25 border-emerald-400/30 text-emerald-200'
+                    : 'bg-amber-500/25 border-amber-400/30 text-amber-200'
+                }`}>
+                  {modoCalculadora === 'jabon' ? 'Proporciones de Moldeo' : 'Cera de Soja • Densidad 0.9'}
                 </span>
                 <span className="text-[11px] text-slate-300 font-medium hidden sm:inline">
-                  Regla x1.2 • Aditivos {calculos.pctAditivos}% (3 a 6%)
+                  {modoCalculadora === 'jabon'
+                    ? `Regla x1.2 • Aditivos ${calculosJabon.pctAditivos}%`
+                    : `Agua x0.9 • Aroma ${calculosVela.pctAroma}% (8% a 10%)`}
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
-                Calculadora Jabonera Jabhaco
+                {modoCalculadora === 'jabon' ? 'Calculadora Jabonera Jabhaco' : 'Calculadora de Velas de Soja'}
               </h2>
             </div>
+          </div>
+
+          {/* Selector de Pestaña: Jabones vs Velas */}
+          <div className="mt-4 bg-black/25 p-1 rounded-2xl border border-white/10 grid grid-cols-2 gap-1 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => setModoCalculadora('jabon')}
+              className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                modoCalculadora === 'jabon'
+                  ? 'bg-white text-brand-950 shadow-md'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <span>🧼 Jabones de Glicerina</span>
+              <span className="hidden sm:inline text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-950">
+                x1.2
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setModoCalculadora('velas')}
+              className={`py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                modoCalculadora === 'velas'
+                  ? 'bg-white text-amber-950 shadow-md'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <span>🕯️ Velas de Soja</span>
+              <span className="hidden sm:inline text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-950">
+                x0.9
+              </span>
+            </button>
           </div>
         </div>
 
         {/* Cuerpo Scrolleable */}
         <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-5">
           
-          {/* 1. SECCIÓN DE INPUTS Y PARÁMETROS UNIFICADA */}
-          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
-            
-            {/* Fila 1: Peso Deseado y Cantidad de Barras */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* ============================================================ */}
+          {/* MODO VELAS DE SOJA (NUEVO) */}
+          {/* ============================================================ */}
+          {modoCalculadora === 'velas' && (
+            <div className="space-y-5 animate-in fade-in duration-200">
               
-              {/* Input: Peso Deseado por Barra con stepper +/- 10 */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Peso Deseado por Barra
-                </label>
+              {/* 1. SECCIÓN DE INPUTS DE VELAS */}
+              <div className="bg-amber-50/60 p-4 sm:p-5 rounded-2xl border border-amber-200/90 space-y-4">
                 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => ajustarPeso(-10)}
-                    disabled={pesoDeseado <= 10}
-                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
-                    title="Disminuir 10g"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-
-                  <div className="relative flex-1">
-                    <input
-                      type="number"
-                      min={10}
-                      max={2000}
-                      step={10}
-                      value={pesoDeseado || ''}
-                      onChange={(e) => {
-                        setPesoDeseado(Number(e.target.value) || 0);
-                        setGotasFraganciaManual(null); // Recalcular fragancia proporcional
-                      }}
-                      className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-xs"
-                      placeholder="100"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                      g
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => ajustarPeso(+10)}
-                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                    title="Aumentar 10g"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Pills rápidas de pesos estándar */}
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <span className="text-[10px] text-slate-400 font-semibold mr-1">Rápido:</span>
-                  {PESOS_PREDETERMINADOS.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => {
-                        setPesoDeseado(p);
-                        setGotasFraganciaManual(null);
-                      }}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                        pesoDeseado === p
-                          ? 'bg-brand-600 text-white shadow-xs scale-102'
-                          : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
-                      }`}
-                    >
-                      {p}g
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Input: Cantidad de Barras */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Cantidad de Barras
-                </label>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCantidadBarras((prev) => Math.max(1, prev - 1))}
-                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                    title="Disminuir barra"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-
-                  <div className="flex-1 text-center bg-white border border-slate-300 py-2.5 rounded-xl shadow-xs flex items-center justify-center">
-                    <span className="text-xl font-black text-slate-900 leading-none">
-                      {cantidadBarras}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setCantidadBarras((prev) => prev + 1)}
-                    className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                    title="Aumentar barra"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <p className="text-[11px] text-slate-500 pt-1">
-                  Peso neto total del lote: <strong>{calculos.totalNetoLote}g</strong>
-                </p>
-              </div>
-
-            </div>
-
-            {/* Fila 2: Porcentaje de Aditivos dentro del mismo frame */}
-            <div className="border-t border-slate-200/90 pt-3.5 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Porcentaje de Aditivos Permitido
-                  </label>
-                  <p className="text-[11px] text-slate-500">
-                    Rango recomendado: de <strong>3.0%</strong> a <strong>6.0%</strong> (paso ±0.1%)
-                  </p>
-                </div>
-
-                {/* Stepper de Porcentaje (▲ y ▼ en 0.1) */}
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => ajustarPorcentaje(-0.1)}
-                    disabled={porcentajeAditivos <= 3.0}
-                    className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
-                    title="Disminuir 0.1%"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-
-                  <div className="min-w-[90px] text-center bg-white border-2 border-brand-500/30 py-1.5 px-3 rounded-xl shadow-inner">
-                    <span className="text-xl font-black text-brand-700">
-                      {calculos.pctAditivos.toFixed(1)}%
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => ajustarPorcentaje(+0.1)}
-                    disabled={porcentajeAditivos >= 6.0}
-                    className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
-                    title="Aumentar 0.1%"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Selector rápido de porcentajes típicos */}
-              <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
-                <span className="text-[10px] text-slate-400 font-semibold mr-1">Valores típicos:</span>
-                {PORCENTAJES_RAPIDOS.map((pct) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    onClick={() => setPorcentajeAditivos(pct)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      calculos.pctAditivos === pct
-                        ? 'bg-amber-600 text-white shadow-xs scale-102'
-                        : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200/80 shadow-xs'
-                    }`}
-                  >
-                    {pct.toFixed(1)}%
-                  </button>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* 3. TARJETAS DE RESULTADOS PRINCIPALES */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-brand-600" />
-                Resultados Calculados con Factor 1.2
-              </h3>
-
-              <button
-                type="button"
-                onClick={handleReset}
-                className="text-[11px] font-semibold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors"
-                title="Restablecer valores predeterminados (100g, 1.2, 3%)"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Restablecer</span>
-              </button>
-            </div>
-
-            {/* Grid 2 Columnas de Resultado Principal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              
-              {/* Tarjeta 1: Base de Glicerina */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/60 border-2 border-emerald-300/80 shadow-sm relative overflow-hidden">
-                <div className="flex items-center justify-between text-emerald-800 mb-1">
-                  <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
-                    <FlaskConical className="w-4 h-4 text-emerald-600" />
-                    Base de Glicerina a Fundir
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-900">
-                    {(100 - calculos.pctAditivos).toFixed(1)}%
-                  </span>
-                </div>
-
-                <div className="flex items-baseline gap-1.5 my-1">
-                  <span className="text-3xl sm:text-4xl font-black text-emerald-950 tracking-tight">
-                    {formatDecimal(calculos.totalGramosGlicerina, 1)}
-                  </span>
-                  <span className="text-base font-extrabold text-emerald-700">gramos</span>
-                </div>
-
-                <p className="text-[11px] text-emerald-800/90 leading-tight">
-                  {calculos.barras > 1 ? (
-                    <>Equivale a <strong>{formatDecimal(calculos.glicerinaPorBarra, 1)}g</strong> de base por cada barra.</>
-                  ) : (
-                    <>Glicerina resultante tras restar los <strong>{formatDecimal(calculos.totalGramosAditivos, 2)}g</strong> de aditivos.</>
-                  )}
-                </p>
-              </div>
-
-              {/* Tarjeta 2: Total Aditivos */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50 via-rose-50 to-orange-100/60 border-2 border-amber-300/80 shadow-sm relative overflow-hidden">
-                <div className="flex items-center justify-between text-amber-900 mb-1">
-                  <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
-                    <Droplets className="w-4 h-4 text-amber-600" />
-                    Total Aditivos ({calculos.pctAditivos}%)
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-950">
-                    {calculos.pctAditivos}%
-                  </span>
-                </div>
-
-                <div className="flex items-baseline gap-1.5 my-1">
-                  <span className="text-3xl sm:text-4xl font-black text-amber-950 tracking-tight">
-                    {formatDecimal(calculos.totalGramosAditivos, 2)}
-                  </span>
-                  <span className="text-base font-extrabold text-amber-700">gramos</span>
-                </div>
-
-                <p className="text-[11px] text-amber-900/90 leading-tight">
-                  {calculos.barras > 1 ? (
-                    <>Equivale a <strong>{formatDecimal(calculos.aditivosPorBarra, 2)}g</strong> de aditivos por barra.</>
-                  ) : (
-                    <>Calculado aplicando el {calculos.pctAditivos}% a los <strong>{formatDecimal(calculos.totalMezclaLote, 1)}g</strong> de mezcla.</>
-                  )}
-                </p>
-              </div>
-
-            </div>
-
-            {/* Barra Visual de Proporciones */}
-            <div className="bg-slate-100 p-3 rounded-2xl border border-slate-200">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 mb-1.5">
-                <span className="flex items-center gap-1 text-emerald-800">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                  Base Glicerina ({(100 - calculos.pctAditivos).toFixed(1)}% = {formatDecimal(calculos.totalGramosGlicerina, 1)}g)
-                </span>
-                <span className="flex items-center gap-1 text-amber-800">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                  Aditivos ({calculos.pctAditivos}% = {formatDecimal(calculos.totalGramosAditivos, 2)}g)
-                </span>
-              </div>
-
-              {/* Barra segmentada */}
-              <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden flex shadow-inner">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
-                  style={{ width: `${100 - calculos.pctAditivos}%` }}
-                />
-                <div
-                  className="h-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-300"
-                  style={{ width: `${calculos.pctAditivos}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
-                <span>Total mezcla en molde ({calculos.totalNetoLote}g × 1.2): <strong>{formatDecimal(calculos.totalMezclaLote, 1)}g</strong></span>
-                <span>Factor: <strong>x{calculos.factor}</strong></span>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. MÓDULO DE FRAGANCIA (REGLA: 100g -> MÁX 12 GOTAS / 0.5g; 50g -> 6 GOTAS) */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-pink-50/50 to-purple-100/40 border-2 border-purple-200/90 space-y-3">
-            
-            {/* Header del bloque con switch estilo iOS/Material */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-3.5 rounded-xl border border-purple-200/80 shadow-xs">
-              <div>
-                <span className="text-xs font-extrabold uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
-                  <span>🌸 Fragancia / Esencia</span>
-                  <span className="px-2 py-0.5 rounded-full bg-purple-200 text-purple-900 text-[10px] font-bold">
-                    Opcional
-                  </span>
-                </span>
-                <p className="text-[11px] text-purple-800/80 mt-0.5">
-                  Regla recomendada: para <strong>100g</strong> máx <strong>12 gotas (0.5g)</strong> • para <strong>50g</strong> máx <strong>6 gotas (0.25g)</strong>
-                </p>
-              </div>
-
-              {/* Toggle switch visual e intuitivo */}
-              <label className="inline-flex items-center gap-3 cursor-pointer select-none shrink-0 bg-white px-3.5 py-2 rounded-xl border border-purple-200 shadow-xs hover:border-purple-300 transition-all">
-                <span className={`text-xs font-bold transition-colors ${
-                  incluirFragancia ? 'text-purple-900' : 'text-slate-400'
-                }`}>
-                  {incluirFragancia ? 'Con fragancia' : 'Sin fragancia'}
-                </span>
-                
-                <div className="relative inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={incluirFragancia}
-                    onChange={(e) => setIncluirFragancia(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
-                </div>
-              </label>
-            </div>
-
-            {incluirFragancia ? (
-              <div className="space-y-3 pt-1">
-                {/* Cuadro destacado de recomendación de fragancia */}
-                <div className="bg-white/90 p-3.5 rounded-xl border border-purple-200 text-xs text-purple-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                {/* Explicación de cabecera */}
+                <div className="flex items-start gap-2.5 text-xs text-amber-950 bg-white/80 p-3 rounded-xl border border-amber-200/80">
+                  <Scale className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-purple-600 block">
-                      Máximo Recomendado para tu jabón ({calculos.pesoNetoUnitario}g)
+                    <span className="font-extrabold block text-amber-900">Método de Pesaje con Agua:</span>
+                    <span>
+                      Llena tu molde o vaso con agua hasta el nivel deseado de la vela y pésalo en la báscula.
+                      Ese peso se multiplica por <strong>0.9</strong> (densidad de la cera de soja), y luego se descuenta el porcentaje de aroma (<strong>8% a 10%</strong>).
                     </span>
-                    <span className="text-base font-extrabold text-purple-950">
-                      {calculos.maxGotasPorBarra} gotas ({formatDecimal(calculos.maxGramosFraganciaPorBarra, 2)}g) <span className="text-xs font-medium text-purple-700">por barra</span>
-                    </span>
-                    {calculos.barras > 1 && (
-                      <span className="block text-[11px] text-purple-700 font-semibold mt-0.5">
-                        Total para {calculos.barras} barras: <strong>{calculos.totalMaxGotasFragancia} gotas ({formatDecimal(calculos.totalMaxGramosFragancia, 2)}g)</strong>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  {/* Input 1: Peso en Agua del Recipiente/Molde */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Capacidad en Agua del Recipiente
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => ajustarPesoAguaVela(-10)}
+                        disabled={pesoAguaVela <= 10}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-amber-100/60 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
+                        title="Disminuir 10g"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min={10}
+                          max={3000}
+                          step={10}
+                          value={pesoAguaVela || ''}
+                          onChange={(e) => setPesoAguaVela(Number(e.target.value) || 0)}
+                          className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
+                          placeholder="200"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                          g
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => ajustarPesoAguaVela(+10)}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-amber-100/60 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                        title="Aumentar 10g"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Botones rápidos de recipientes */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      <span className="text-[10px] text-slate-400 font-semibold mr-1">Típicos:</span>
+                      {RECIPIENTES_RAPIDOS_VELAS.map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setPesoAguaVela(p)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                            pesoAguaVela === p
+                              ? 'bg-amber-700 text-white shadow-xs scale-102'
+                              : 'bg-white hover:bg-amber-100 text-slate-700 border border-slate-200'
+                          }`}
+                        >
+                          {p}g
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Input 2: Cantidad de Velas */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Cantidad de Velas a Fabricar
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCantidadVelas((prev) => Math.max(1, prev - 1))}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-amber-100/60 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                        title="Disminuir vela"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+
+                      <div className="flex-1 text-center bg-white border border-slate-300 py-2.5 rounded-xl shadow-xs flex items-center justify-center">
+                        <span className="text-xl font-black text-slate-900 leading-none">
+                          {cantidadVelas}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCantidadVelas((prev) => prev + 1)}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-amber-100/60 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                        title="Aumentar vela"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 pt-1">
+                      Agua total del lote: <strong>{calculosVela.totalAguaLote}g</strong> (Capacidad combinada)
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Fila 2: Porcentaje de Aroma Recomendado (8% a 10%) */}
+                <div className="border-t border-amber-200/90 pt-3.5 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Porcentaje de Esencia Aromática
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Recomendado para cera de soja: <strong>8.0%</strong> a <strong>10.0%</strong>
+                      </p>
+                    </div>
+
+                    {/* Stepper de Porcentaje de Aroma */}
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => ajustarPorcentajeAromaVela(-0.5)}
+                        disabled={porcentajeAromaVela <= 5.0}
+                        className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                        title="Disminuir 0.5%"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+
+                      <div className="min-w-[90px] text-center bg-white border-2 border-amber-500/50 py-1.5 px-3 rounded-xl shadow-inner">
+                        <span className="text-xl font-black text-amber-800">
+                          {calculosVela.pctAroma.toFixed(1)}%
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => ajustarPorcentajeAromaVela(+0.5)}
+                        disabled={porcentajeAromaVela >= 12.0}
+                        className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                        title="Aumentar 0.5%"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Pills rápidas de porcentaje de aroma */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-amber-200/60">
+                    <span className="text-[10px] text-slate-400 font-semibold mr-1">Rápido:</span>
+                    {PORCENTAJES_RAPIDOS_VELAS.map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setPorcentajeAromaVela(pct)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                          calculosVela.pctAroma === pct
+                            ? 'bg-amber-800 text-white shadow-xs scale-102'
+                            : 'bg-white hover:bg-amber-100 text-amber-950 border border-amber-200'
+                        }`}
+                      >
+                        {pct.toFixed(1)}% {pct === 8 ? '(Suave)' : pct === 9 ? '(Ideal)' : '(Intenso)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* 2. TARJETAS DE RESULTADOS PRINCIPALES DE VELAS */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    Pesos Exactos de Cera & Aroma (Densidad 0.9)
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="text-[11px] font-semibold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Restablecer</span>
+                  </button>
+                </div>
+
+                {/* 2 Columnas: Cera de Soja vs Aroma */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  
+                  {/* Tarjeta 1: Cera de Soja Pura */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/70 border-2 border-amber-400/80 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between text-amber-900 mb-1">
+                      <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-amber-600" />
+                        Cera de Soja a Pesar y Fundir
                       </span>
-                    )}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-950">
+                        {(100 - calculosVela.pctAroma).toFixed(1)}%
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline gap-1.5 my-1">
+                      <span className="text-3xl sm:text-4xl font-black text-amber-950 tracking-tight">
+                        {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}
+                      </span>
+                      <span className="text-base font-extrabold text-amber-700">gramos</span>
+                    </div>
+
+                    <p className="text-[11px] text-amber-900/90 leading-tight">
+                      {calculosVela.velas > 1 ? (
+                        <>Equivale a <strong>{formatDecimal(calculosVela.ceraSojaPorVela, 1)}g</strong> de cera de soja por cada vela.</>
+                      ) : (
+                        <>Cera pura tras descontar los <strong>{formatDecimal(calculosVela.totalGramosAroma, 1)}g</strong> de esencia.</>
+                      )}
+                    </p>
                   </div>
 
-                  {/* Selector rápido de gotas */}
-                  <div className="flex items-center gap-1.5 self-start sm:self-auto bg-purple-50 p-1.5 rounded-xl border border-purple-200">
-                    <button
-                      type="button"
-                      onClick={() => setGotasFraganciaManual((prev) => Math.max(1, (prev ?? calculos.totalMaxGotasFragancia) - 1))}
-                      className="w-7 h-7 rounded-lg bg-white hover:bg-purple-100 text-purple-900 border border-purple-200 flex items-center justify-center font-bold"
-                      title="Disminuir 1 gota"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
+                  {/* Tarjeta 2: Esencia Aromática */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100/60 border-2 border-purple-300/80 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between text-purple-950 mb-1">
+                      <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                        <Droplets className="w-4 h-4 text-purple-600" />
+                        Esencia Aromática ({calculosVela.pctAroma}%)
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-200 text-purple-950">
+                        {calculosVela.pctAroma}%
+                      </span>
+                    </div>
 
-                    <span className="px-2 font-black text-purple-950 text-sm">
-                      {calculos.gotasFraganciaActuales} gotas
-                    </span>
+                    <div className="flex items-baseline gap-1.5 my-1">
+                      <span className="text-3xl sm:text-4xl font-black text-purple-950 tracking-tight">
+                        {formatDecimal(calculosVela.totalGramosAroma, 1)}
+                      </span>
+                      <span className="text-base font-extrabold text-purple-700">gramos</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setGotasFraganciaManual((prev) => Math.min(calculos.totalMaxGotasFragancia, (prev ?? calculos.totalMaxGotasFragancia) + 1))}
-                      disabled={calculos.gotasFraganciaActuales >= calculos.totalMaxGotasFragancia}
-                      className="w-7 h-7 rounded-lg bg-white hover:bg-purple-100 text-purple-900 border border-purple-200 flex items-center justify-center font-bold disabled:opacity-40"
-                      title="Aumentar 1 gota"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
+                    <p className="text-[11px] text-purple-900/90 leading-tight">
+                      {calculosVela.velas > 1 ? (
+                        <>Equivale a <strong>{formatDecimal(calculosVela.aromaPorVela, 1)}g</strong> de esencia por cada vela.</>
+                      ) : (
+                        <>Proporción óptima calculada para <strong>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</strong> de vela terminada.</>
+                      )}
+                    </p>
                   </div>
+
                 </div>
 
-                {/* Desglose de distribución: Fragancia vs Otros aditivos */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-purple-100/70 border border-purple-200 text-purple-950">
-                    <span className="text-[10px] font-bold text-purple-800 uppercase block">Fragancia aplicada</span>
-                    <span className="font-extrabold text-sm text-purple-900">
-                      {calculos.gotasFraganciaActuales} gotas (~{formatDecimal(calculos.gramosFraganciaActuales, 2)}g)
+                {/* Barra Visual de Proporciones de Vela */}
+                <div className="bg-slate-100 p-3 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-1.5">
+                    <span className="flex items-center gap-1 text-amber-900">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                      Cera de Soja ({(100 - calculosVela.pctAroma).toFixed(1)}% = {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g)
+                    </span>
+                    <span className="flex items-center gap-1 text-purple-900">
+                      <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" />
+                      Aroma ({calculosVela.pctAroma}% = {formatDecimal(calculosVela.totalGramosAroma, 1)}g)
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-emerald-100/70 border border-emerald-200 text-emerald-950">
-                    <span className="text-[10px] font-bold text-emerald-800 uppercase block">Resto para otros aditivos</span>
-                    <span className="font-extrabold text-sm text-emerald-900">
-                      {formatDecimal(calculos.gramosOtrosAditivos, 2)}g disponibles
-                    </span>
+                  {/* Barra segmentada */}
+                  <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden flex shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-300"
+                      style={{ width: `${100 - calculosVela.pctAroma}%` }}
+                    />
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                      style={{ width: `${calculosVela.pctAroma}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
+                    <span>Peso total vertido en recipiente ({calculosVela.totalAguaLote}g agua × 0.9): <strong>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</strong></span>
+                    <span>Densidad soja: <strong>0.90 g/ml</strong></span>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="p-3 bg-white/80 rounded-xl border border-purple-200 text-xs text-slate-600 flex items-center gap-2">
-                <Info className="w-4 h-4 text-purple-600 shrink-0" />
-                <span>
-                  <strong>Jabón sin fragancia:</strong> Todo el presupuesto de <strong>{formatDecimal(calculos.totalGramosAditivos, 2)}g</strong> de aditivos ({calculos.pctAditivos}%) queda disponible para extractos botánicos, miel, avena, arcillas o aceites nutritivos.
+
+              {/* 3. GUÍA DE TEMPERATURAS PARA CERA DE SOJA (VALOR TÉCNICO PROFESIONAL) */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-stone-50 via-amber-50/40 to-stone-100/70 border border-amber-200/80 space-y-2.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
+                  <Thermometer className="w-4 h-4 text-amber-700" />
+                  Temperaturas Clave de Taller (Cera de Soja)
                 </span>
-              </div>
-            )}
-          </div>
 
-          {/* 5. EXPLICACIÓN PEDAGÓGICA PASO A PASO */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs text-slate-600">
-            <div
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setMostrarDetallesAvanzados(!mostrarDetallesAvanzados)}
-            >
-              <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                <HelpCircle className="w-3.5 h-3.5 text-brand-600" />
-                ¿Cómo funciona exactamente este cálculo?
-              </span>
-              <button type="button" className="text-brand-600 font-semibold hover:underline text-[11px]">
-                {mostrarDetallesAvanzados ? 'Ocultar paso a paso' : 'Ver desglose paso a paso'}
-              </button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                  <div className="bg-white p-2.5 rounded-xl border border-amber-200/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-amber-700 uppercase block">1. Fundir Cera</span>
+                    <span className="text-base font-black text-slate-900 block">70°C – 75°C</span>
+                    <span className="text-[10px] text-slate-500">Al baño maría suave sin sobrecalentar</span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-purple-200/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-purple-700 uppercase block">2. Agregar Aroma</span>
+                    <span className="text-base font-black text-slate-900 block">60°C – 65°C</span>
+                    <span className="text-[10px] text-slate-500">Revolver despacio durante 2 minutos</span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-200/80 shadow-xs">
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase block">3. Verter al Vaso</span>
+                    <span className="text-base font-black text-slate-900 block">50°C – 55°C</span>
+                    <span className="text-[10px] text-slate-500">Vaso tibio para evitar túnel o rechupe</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/70 border border-amber-200/60 text-[11px] text-slate-600 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>
+                    <strong>Curado recomendado:</strong> Dejar reposar la vela mínimo <strong>48 horas</strong> a temperatura ambiente antes de encender (ideal 7 a 14 días para máxima difusión aromática).
+                  </span>
+                </div>
+              </div>
+
+              {/* 4. DESGLOSE PASO A PASO */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs text-slate-600">
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setMostrarDetallesVelas(!mostrarDetallesVelas)}
+                >
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <HelpCircle className="w-3.5 h-3.5 text-amber-700" />
+                    ¿Cómo funciona exactamente la fórmula de la vela?
+                  </span>
+                  <button type="button" className="text-amber-800 font-semibold hover:underline text-[11px]">
+                    {mostrarDetallesVelas ? 'Ocultar paso a paso' : 'Ver desglose paso a paso'}
+                  </button>
+                </div>
+
+                {mostrarDetallesVelas && (
+                  <div className="pt-2 border-t border-slate-200 space-y-1.5 font-mono text-[11px] text-slate-700 bg-white p-3 rounded-xl border">
+                    <p>
+                      <strong>Paso 1 (Capacidad en Agua):</strong> El recipiente contiene <code>{calculosVela.aguaPorVela}g de agua</code> ({calculosVela.velas} vela(s) = <code>{calculosVela.totalAguaLote}g</code>).
+                    </p>
+                    <p>
+                      <strong>Paso 2 (Multiplicar por 0.9):</strong> Densidad de cera de soja = <code>{calculosVela.totalAguaLote}g × 0.9 = {formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g de vela total</code>.
+                    </p>
+                    <p>
+                      <strong>Paso 3 (Calcular el {calculosVela.pctAroma}% de Aroma):</strong> <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g × {calculosVela.pctAroma}% = {formatDecimal(calculosVela.totalGramosAroma, 1)}g de fragancia</code>.
+                    </p>
+                    <p className="text-amber-800 font-bold">
+                      <strong>Paso 4 (Cera de Soja pura a fundir):</strong> <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g - {formatDecimal(calculosVela.totalGramosAroma, 1)}g = {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g de cera de soja</code>.
+                    </p>
+                    <p className="text-emerald-800 font-bold pt-1 border-t border-slate-100">
+                      <strong>Comprobación:</strong> {formatDecimal(calculosVela.totalGramosCeraSoja, 1)}g cera + {formatDecimal(calculosVela.totalGramosAroma, 1)}g aroma = <code>{formatDecimal(calculosVela.totalCeraMezclaLote, 1)}g</code> (llena el molde al ras con precisión).
+                    </p>
+                  </div>
+                )}
+              </div>
+
             </div>
+          )}
 
-            {mostrarDetallesAvanzados && (
-              <div className="pt-2 border-t border-slate-200 space-y-1.5 font-mono text-[11px] text-slate-700 bg-white p-3 rounded-xl border">
-                <p>
-                  <strong>Paso 1:</strong> Peso deseado de barra = <code>{calculos.pesoNetoUnitario}g</code> (Lote de {calculos.barras} barra(s) = <code>{calculos.totalNetoLote}g</code>)
-                </p>
-                <p>
-                  <strong>Paso 2:</strong> Multiplicar por factor 1.2 = <code>{calculos.totalNetoLote}g × 1.2 = {formatDecimal(calculos.totalMezclaLote, 1)}g</code>
-                </p>
-                <p>
-                  <strong>Paso 3:</strong> Calcular el {calculos.pctAditivos}% de aditivos = <code>{formatDecimal(calculos.totalMezclaLote, 1)}g × {calculos.pctAditivos}% = {formatDecimal(calculos.totalGramosAditivos, 2)}g</code>
-                </p>
-                <p className="text-emerald-700 font-bold">
-                  <strong>Paso 4:</strong> Restar aditivos a la mezcla total = <code>{formatDecimal(calculos.totalMezclaLote, 1)}g - {formatDecimal(calculos.totalGramosAditivos, 2)}g = {formatDecimal(calculos.totalGramosGlicerina, 1)}g de base de glicerina</code>
-                </p>
-                <p className="text-purple-700 font-bold pt-1 border-t border-slate-100">
-                  <strong>Regla Fragancia:</strong> Para 100g → máx 12 gotas (0.5g). Para {calculos.pesoNetoUnitario}g → máx {calculos.maxGotasPorBarra} gotas ({formatDecimal(calculos.maxGramosFraganciaPorBarra, 2)}g) por barra.
-                </p>
+          {/* ============================================================ */}
+          {/* MODO JABÓN ARTESANAL (ORIGINAL PRESERVADO) */}
+          {/* ============================================================ */}
+          {modoCalculadora === 'jabon' && (
+            <div className="space-y-5 animate-in fade-in duration-200">
+              
+              {/* 1. SECCIÓN DE INPUTS Y PARÁMETROS */}
+              <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
+                
+                {/* Fila 1: Peso Deseado y Cantidad de Barras */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  {/* Input: Peso Deseado por Barra con stepper +/- 10 */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Peso Deseado por Barra
+                    </label>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => ajustarPesoJabon(-10)}
+                        disabled={pesoDeseadoJabon <= 10}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
+                        title="Disminuir 10g"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min={10}
+                          max={2000}
+                          step={10}
+                          value={pesoDeseadoJabon || ''}
+                          onChange={(e) => {
+                            setPesoDeseadoJabon(Number(e.target.value) || 0);
+                            setGotasFraganciaManual(null);
+                          }}
+                          className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-xs"
+                          placeholder="100"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                          g
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => ajustarPesoJabon(+10)}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                        title="Aumentar 10g"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Pills rápidas de pesos estándar */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      <span className="text-[10px] text-slate-400 font-semibold mr-1">Rápido:</span>
+                      {PESOS_PREDETERMINADOS_JABON.map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => {
+                            setPesoDeseadoJabon(p);
+                            setGotasFraganciaManual(null);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                            pesoDeseadoJabon === p
+                              ? 'bg-brand-600 text-white shadow-xs scale-102'
+                              : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
+                          }`}
+                        >
+                          {p}g
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Input: Cantidad de Barras */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Cantidad de Barras
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCantidadBarras((prev) => Math.max(1, prev - 1))}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                        title="Disminuir barra"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+
+                      <div className="flex-1 text-center bg-white border border-slate-300 py-2.5 rounded-xl shadow-xs flex items-center justify-center">
+                        <span className="text-xl font-black text-slate-900 leading-none">
+                          {cantidadBarras}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCantidadBarras((prev) => prev + 1)}
+                        className="w-11 h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
+                        title="Aumentar barra"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 pt-1">
+                      Peso neto total del lote: <strong>{calculosJabon.totalNetoLote}g</strong>
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Fila 2: Porcentaje de Aditivos */}
+                <div className="border-t border-slate-200/90 pt-3.5 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Porcentaje de Aditivos Permitido
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Rango recomendado: de <strong>3.0%</strong> a <strong>6.0%</strong> (paso ±0.1%)
+                      </p>
+                    </div>
+
+                    {/* Stepper de Porcentaje */}
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => ajustarPorcentajeJabon(-0.1)}
+                        disabled={porcentajeAditivos <= 3.0}
+                        className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                        title="Disminuir 0.1%"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+
+                      <div className="min-w-[90px] text-center bg-white border-2 border-brand-500/30 py-1.5 px-3 rounded-xl shadow-inner">
+                        <span className="text-xl font-black text-brand-700">
+                          {calculosJabon.pctAditivos.toFixed(1)}%
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => ajustarPorcentajeJabon(+0.1)}
+                        disabled={porcentajeAditivos >= 6.0}
+                        className="w-10 h-10 rounded-xl bg-white hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-xs"
+                        title="Aumentar 0.1%"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Selector rápido de porcentajes típicos */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
+                    <span className="text-[10px] text-slate-400 font-semibold mr-1">Valores típicos:</span>
+                    {PORCENTAJES_RAPIDOS_JABON.map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setPorcentajeAditivos(pct)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                          calculosJabon.pctAditivos === pct
+                            ? 'bg-amber-600 text-white shadow-xs scale-102'
+                            : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200/80 shadow-xs'
+                        }`}
+                      >
+                        {pct.toFixed(1)}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
               </div>
-            )}
-          </div>
+
+              {/* 2. TARJETAS DE RESULTADOS PRINCIPALES DE JABÓN */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-brand-600" />
+                    Resultados Calculados con Factor 1.2
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="text-[11px] font-semibold text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Restablecer</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  
+                  {/* Base de Glicerina */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/60 border-2 border-emerald-300/80 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between text-emerald-800 mb-1">
+                      <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                        <FlaskConical className="w-4 h-4 text-emerald-600" />
+                        Base de Glicerina a Fundir
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-200/80 text-emerald-900">
+                        {(100 - calculosJabon.pctAditivos).toFixed(1)}%
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline gap-1.5 my-1">
+                      <span className="text-3xl sm:text-4xl font-black text-emerald-950 tracking-tight">
+                        {formatDecimal(calculosJabon.totalGramosGlicerina, 1)}
+                      </span>
+                      <span className="text-base font-extrabold text-emerald-700">gramos</span>
+                    </div>
+
+                    <p className="text-[11px] text-emerald-800/90 leading-tight">
+                      {calculosJabon.barras > 1 ? (
+                        <>Equivale a <strong>{formatDecimal(calculosJabon.glicerinaPorBarra, 1)}g</strong> de base por cada barra.</>
+                      ) : (
+                        <>Glicerina resultante tras restar los <strong>{formatDecimal(calculosJabon.totalGramosAditivos, 2)}g</strong> de aditivos.</>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Total Aditivos */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50 via-rose-50 to-orange-100/60 border-2 border-amber-300/80 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between text-amber-900 mb-1">
+                      <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                        <Droplets className="w-4 h-4 text-amber-600" />
+                        Total Aditivos ({calculosJabon.pctAditivos}%)
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-950">
+                        {calculosJabon.pctAditivos}%
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline gap-1.5 my-1">
+                      <span className="text-3xl sm:text-4xl font-black text-amber-950 tracking-tight">
+                        {formatDecimal(calculosJabon.totalGramosAditivos, 2)}
+                      </span>
+                      <span className="text-base font-extrabold text-amber-700">gramos</span>
+                    </div>
+
+                    <p className="text-[11px] text-amber-900/90 leading-tight">
+                      {calculosJabon.barras > 1 ? (
+                        <>Equivale a <strong>{formatDecimal(calculosJabon.aditivosPorBarra, 2)}g</strong> de aditivos por barra.</>
+                      ) : (
+                        <>Calculado aplicando el {calculosJabon.pctAditivos}% a los <strong>{formatDecimal(calculosJabon.totalMezclaLote, 1)}g</strong> de mezcla.</>
+                      )}
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Barra Visual de Proporciones */}
+                <div className="bg-slate-100 p-3 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 mb-1.5">
+                    <span className="flex items-center gap-1 text-emerald-800">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                      Base Glicerina ({(100 - calculosJabon.pctAditivos).toFixed(1)}% = {formatDecimal(calculosJabon.totalGramosGlicerina, 1)}g)
+                    </span>
+                    <span className="flex items-center gap-1 text-amber-800">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                      Aditivos ({calculosJabon.pctAditivos}% = {formatDecimal(calculosJabon.totalGramosAditivos, 2)}g)
+                    </span>
+                  </div>
+
+                  <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden flex shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
+                      style={{ width: `${100 - calculosJabon.pctAditivos}%` }}
+                    />
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-300"
+                      style={{ width: `${calculosJabon.pctAditivos}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
+                    <span>Total mezcla en molde ({calculosJabon.totalNetoLote}g × 1.2): <strong>{formatDecimal(calculosJabon.totalMezclaLote, 1)}g</strong></span>
+                    <span>Factor: <strong>x{calculosJabon.factor}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. MÓDULO DE FRAGANCIA PARA JABÓN */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-pink-50/50 to-purple-100/40 border-2 border-purple-200/90 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 p-3.5 rounded-xl border border-purple-200/80 shadow-xs">
+                  <div>
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
+                      <span>🌸 Fragancia / Esencia</span>
+                      <span className="px-2 py-0.5 rounded-full bg-purple-200 text-purple-900 text-[10px] font-bold">
+                        Opcional
+                      </span>
+                    </span>
+                    <p className="text-[11px] text-purple-800/80 mt-0.5">
+                      Regla recomendada: para <strong>100g</strong> máx <strong>12 gotas (0.5g)</strong> • para <strong>50g</strong> máx <strong>6 gotas (0.25g)</strong>
+                    </p>
+                  </div>
+
+                  <label className="inline-flex items-center gap-3 cursor-pointer select-none shrink-0 bg-white px-3.5 py-2 rounded-xl border border-purple-200 shadow-xs hover:border-purple-300 transition-all">
+                    <span className={`text-xs font-bold transition-colors ${
+                      incluirFraganciaJabon ? 'text-purple-900' : 'text-slate-400'
+                    }`}>
+                      {incluirFraganciaJabon ? 'Con fragancia' : 'Sin fragancia'}
+                    </span>
+                    
+                    <div className="relative inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={incluirFraganciaJabon}
+                        onChange={(e) => setIncluirFraganciaJabon(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
+                    </div>
+                  </label>
+                </div>
+
+                {incluirFraganciaJabon ? (
+                  <div className="space-y-3 pt-1">
+                    <div className="bg-white/90 p-3.5 rounded-xl border border-purple-200 text-xs text-purple-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-purple-600 block">
+                          Máximo Recomendado para tu jabón ({calculosJabon.pesoNetoUnitario}g)
+                        </span>
+                        <span className="text-base font-extrabold text-purple-950">
+                          {calculosJabon.maxGotasPorBarra} gotas ({formatDecimal(calculosJabon.maxGramosFraganciaPorBarra, 2)}g) <span className="text-xs font-medium text-purple-700">por barra</span>
+                        </span>
+                        {calculosJabon.barras > 1 && (
+                          <span className="block text-[11px] text-purple-700 font-semibold mt-0.5">
+                            Total para {calculosJabon.barras} barras: <strong>{calculosJabon.totalMaxGotasFragancia} gotas ({formatDecimal(calculosJabon.totalMaxGramosFragancia, 2)}g)</strong>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 self-start sm:self-auto bg-purple-50 p-1.5 rounded-xl border border-purple-200">
+                        <button
+                          type="button"
+                          onClick={() => setGotasFraganciaManual((prev) => Math.max(1, (prev ?? calculosJabon.totalMaxGotasFragancia) - 1))}
+                          className="w-7 h-7 rounded-lg bg-white hover:bg-purple-100 text-purple-900 border border-purple-200 flex items-center justify-center font-bold"
+                          title="Disminuir 1 gota"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+
+                        <span className="px-2 font-black text-purple-950 text-sm">
+                          {calculosJabon.gotasFraganciaActuales} gotas
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => setGotasFraganciaManual((prev) => Math.min(calculosJabon.totalMaxGotasFragancia, (prev ?? calculosJabon.totalMaxGotasFragancia) + 1))}
+                          disabled={calculosJabon.gotasFraganciaActuales >= calculosJabon.totalMaxGotasFragancia}
+                          className="w-7 h-7 rounded-lg bg-white hover:bg-purple-100 text-purple-900 border border-purple-200 flex items-center justify-center font-bold disabled:opacity-40"
+                          title="Aumentar 1 gota"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2.5 rounded-xl bg-purple-100/70 border border-purple-200 text-purple-950">
+                        <span className="text-[10px] font-bold text-purple-800 uppercase block">Fragancia aplicada</span>
+                        <span className="font-extrabold text-sm text-purple-900">
+                          {calculosJabon.gotasFraganciaActuales} gotas (~{formatDecimal(calculosJabon.gramosFraganciaActuales, 2)}g)
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-emerald-100/70 border border-emerald-200 text-emerald-950">
+                        <span className="text-[10px] font-bold text-emerald-800 uppercase block">Resto para otros aditivos</span>
+                        <span className="font-extrabold text-sm text-emerald-900">
+                          {formatDecimal(calculosJabon.gramosOtrosAditivos, 2)}g disponibles
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-white/80 rounded-xl border border-purple-200 text-xs text-slate-600 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-purple-600 shrink-0" />
+                    <span>
+                      <strong>Jabón sin fragancia:</strong> Todo el presupuesto de <strong>{formatDecimal(calculosJabon.totalGramosAditivos, 2)}g</strong> de aditivos ({calculosJabon.pctAditivos}%) queda disponible para extractos botánicos, miel, avena, arcillas o aceites nutritivos.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. EXPLICACIÓN PASO A PASO JABÓN */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs text-slate-600">
+                <div
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setMostrarDetallesJabon(!mostrarDetallesJabon)}
+                >
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <HelpCircle className="w-3.5 h-3.5 text-brand-600" />
+                    ¿Cómo funciona exactamente este cálculo?
+                  </span>
+                  <button type="button" className="text-brand-600 font-semibold hover:underline text-[11px]">
+                    {mostrarDetallesJabon ? 'Ocultar paso a paso' : 'Ver desglose paso a paso'}
+                  </button>
+                </div>
+
+                {mostrarDetallesJabon && (
+                  <div className="pt-2 border-t border-slate-200 space-y-1.5 font-mono text-[11px] text-slate-700 bg-white p-3 rounded-xl border">
+                    <p>
+                      <strong>Paso 1:</strong> Peso deseado de barra = <code>{calculosJabon.pesoNetoUnitario}g</code> (Lote de {calculosJabon.barras} barra(s) = <code>{calculosJabon.totalNetoLote}g</code>)
+                    </p>
+                    <p>
+                      <strong>Paso 2:</strong> Multiplicar por factor 1.2 = <code>{calculosJabon.totalNetoLote}g × 1.2 = {formatDecimal(calculosJabon.totalMezclaLote, 1)}g</code>
+                    </p>
+                    <p>
+                      <strong>Paso 3:</strong> Calcular el {calculosJabon.pctAditivos}% de aditivos = <code>{formatDecimal(calculosJabon.totalMezclaLote, 1)}g × {calculosJabon.pctAditivos}% = {formatDecimal(calculosJabon.totalGramosAditivos, 2)}g</code>
+                    </p>
+                    <p className="text-emerald-700 font-bold">
+                      <strong>Paso 4:</strong> Restar aditivos a la mezcla total = <code>{formatDecimal(calculosJabon.totalMezclaLote, 1)}g - {formatDecimal(calculosJabon.totalGramosAditivos, 2)}g = {formatDecimal(calculosJabon.totalGramosGlicerina, 1)}g de base de glicerina</code>
+                    </p>
+                    <p className="text-purple-700 font-bold pt-1 border-t border-slate-100">
+                      <strong>Regla Fragancia:</strong> Para 100g → máx 12 gotas (0.5g). Para {calculosJabon.pesoNetoUnitario}g → máx {calculosJabon.maxGotasPorBarra} gotas ({formatDecimal(calculosJabon.maxGramosFraganciaPorBarra, 2)}g) por barra.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
 
         </div>
 
@@ -661,7 +1133,11 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                   onClose();
                   onIrAlLaboratorio();
                 }}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white shadow-md shadow-brand-600/25 active:scale-95 transition-all cursor-pointer"
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer ${
+                  modoCalculadora === 'jabon'
+                    ? 'bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 shadow-brand-600/25'
+                    : 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 shadow-amber-600/25'
+                }`}
               >
                 <span>Formular & Costear</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -669,8 +1145,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              <span>Jabhaco Lab • Proporciones Botánicas</span>
+              <span className={`w-2 h-2 rounded-full inline-block ${
+                modoCalculadora === 'jabon' ? 'bg-emerald-500' : 'bg-amber-500'
+              }`} />
+              <span>Jabhaco Lab • {modoCalculadora === 'jabon' ? 'Proporciones Jaboneras' : 'Formulación de Velas de Soja'}</span>
             </div>
           )}
 
@@ -685,3 +1163,4 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
     </div>
   );
 };
+

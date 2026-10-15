@@ -298,10 +298,13 @@ export const CatalogoPublico: React.FC<CatalogoPublicoProps> = ({
                 type="button"
                 onClick={() => setIsCalculadoraOpen(true)}
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold text-[#0b5c3b] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 transition-all cursor-pointer"
-                title="Calculadora de Proporciones"
+                title="Calculadora de Jabones y Velas de Soja"
               >
                 <Calculator className="w-3.5 h-3.5" />
                 <span>Calculadora</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-200/80 text-emerald-950 text-[10px] font-extrabold uppercase">
+                  Jabón & Velas
+                </span>
               </button>
 
               {/* Botón Mi Laboratorio / Login (Desktop) */}
