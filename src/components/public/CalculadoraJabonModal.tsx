@@ -132,7 +132,7 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
   const ajustarPesoAguaVela = (delta: number) => {
     setPesoAguaVela((prev) => {
       const base = prev || 0;
-      return Math.max(10, Math.round((base + delta) / 10) * 10);
+      return Math.max(5, Math.round((base + delta) / 5) * 5);
     });
   };
 
@@ -413,10 +413,10 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => ajustarPesoAguaVela(-10)}
-                        disabled={pesoAguaVela <= 10}
+                        onClick={() => ajustarPesoAguaVela(-5)}
+                        disabled={pesoAguaVela <= 5}
                         className="w-11 h-11 rounded-xl bg-white hover:bg-amber-100/60 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs disabled:opacity-40 cursor-pointer"
-                        title="Disminuir 10g"
+                        title="Disminuir 5g"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -424,9 +424,9 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                       <div className="relative flex-1">
                         <input
                           type="number"
-                          min={10}
+                          min={5}
                           max={3000}
-                          step={10}
+                          step={5}
                           value={pesoAguaVela || ''}
                           onChange={(e) => setPesoAguaVela(Number(e.target.value) || 0)}
                           className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-extrabold text-slate-900 text-center focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
@@ -439,9 +439,9 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => ajustarPesoAguaVela(+10)}
+                        onClick={() => ajustarPesoAguaVela(+5)}
                         className="w-11 h-11 rounded-xl bg-white hover:bg-amber-100/60 text-slate-700 border border-slate-300 flex items-center justify-center font-bold active:scale-95 transition-all shadow-xs cursor-pointer"
-                        title="Aumentar 10g"
+                        title="Aumentar 5g"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -780,7 +780,72 @@ export const CalculadoraJabonModal: React.FC<CalculadoraJabonModalProps> = ({
                 </div>
               </div>
 
-              {/* 4. DESGLOSE PASO A PASO */}
+              {/* 4. RECOMENDACIONES Y BUENAS PRÁCTICAS DEL ARTESANO CERERO */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-amber-100/50 border-2 border-amber-300/80 space-y-3.5 shadow-xs">
+                <div className="flex items-center justify-between border-b border-amber-200/80 pb-2.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
+                    <span className="text-base">✨</span>
+                    <span>Recomendaciones del Artesano Cerero (Buenas Prácticas)</span>
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-950">
+                    Tips Pro
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
+                  
+                  {/* Tip 1: Precalentar molde o recipiente */}
+                  <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80 shadow-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
+                      <span className="text-sm">🔥</span>
+                      <span>1. Precalentar el molde o recipiente</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Pasa una pistola de calor o secador suave por el vaso o molde antes de verter. 
+                      Evita el choque térmico, previene manchas húmedas (<em>wet spots</em> donde la cera se despega del cristal) y elimina marcas de estrías en moldes de silicona.
+                    </p>
+                  </div>
+
+                  {/* Tip 2: Elección y centrado del pabilo */}
+                  <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80 shadow-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
+                      <span className="text-sm">🕯️</span>
+                      <span>2. Pabilo indicado y bien centrado</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      El calibre del pabilo debe coincidir con el diámetro de la vela (ej: 5–6 cm = pabilo mediano; &gt;7.5 cm = pabilo grueso o doble mecha).
+                      Fija el ojalillo al fondo y usa siempre un sujetapabilos para mantenerlo tenso y recto en el centro exacto.
+                    </p>
+                  </div>
+
+                  {/* Tip 3: Vertido lento y sin turbulencias */}
+                  <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80 shadow-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
+                      <span className="text-sm">🍯</span>
+                      <span>3. Vertido lento y continuo</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Vierte la mezcla a la temperatura recomendada de forma lenta y con pulso constante, dejando caer el hilo de cera cerca del borde.
+                      Así evitas atrapar burbujas de aire que generen huecos o cráteres internos.
+                    </p>
+                  </div>
+
+                  {/* Tip 4: Enfriamiento estable y corte de mecha */}
+                  <div className="bg-white/90 p-3 rounded-xl border border-amber-200/80 shadow-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
+                      <span className="text-sm">✂️</span>
+                      <span>4. Enfriamiento lento y corte de mecha</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Deja enfriar sobre una superficie nivelada y sin corrientes de aire frío o ventiladores.
+                      Antes del primer encendido, recorta siempre el pabilo a <strong>5 mm o 6 mm</strong> para una llama limpia y sin humo negro (hollín).
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* 5. DESGLOSE PASO A PASO */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs text-slate-600">
                 <div
                   className="flex items-center justify-between cursor-pointer"
